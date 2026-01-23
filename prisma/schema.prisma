@@ -1,0 +1,175 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  automations   Automation[]
+  integrations  Integration[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Integration {
+  id String @id @default(cuid())
+  name INTEGRATIONS @default(INSTAGRAM)
+  token String @unique
+  instagramId String? @unique
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+
+  userId String?
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("integration")
+}
+
+
+model Automation {
+  id  String @id @default(cuid())
+  name String @default("Sem título")
+  createdAt DateTime @default(now())
+  active Boolean @default(false)
+
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade) // Talvez seja opcional
+
+  dms Dms[]
+  posts Post[]
+  listeners Listerner?
+  triggers Trigger[]
+  keywords Keyword[]
+
+  @@map("automation")
+}
+
+model Dms {
+  id String @id @default(cuid())
+  senderId String?
+  recieverId String?
+  message String?
+  createdAt DateTime @default(now())
+  automationId String?
+  automation Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
+}
+
+model Post {
+  id String @id @default(cuid())
+  postId String
+  caption String?
+  media String
+  mediaType MEDIA_TYPE @default(IMAGE)
+  automationId String?
+  automation Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
+}
+
+model Listerner {
+  id String @id @default(cuid())
+  automationId String? @unique
+  automation Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  listener LISTENERS @default(MESSAGE)
+  prompt String
+  commentReply String?
+  dmCount Int @default(0)
+  commentCount Int @default(0)
+}
+
+model Trigger {
+  id String @id @default(cuid())
+  type String
+  automationId String?
+  automation Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
+}
+
+model Keyword {
+  id String @id @default(cuid())
+  word String
+  automationId String?
+  automation Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
+
+  @@unique([automationId, word])
+}
+
+// Enums
+enum INTEGRATIONS {
+  INSTAGRAM
+}
+
+enum MEDIA_TYPE {
+  IMAGE
+  VIDEO
+  CAROSEL_ALBUM
+}
+
+enum LISTENERS {
+  SMARTAI
+  MESSAGE
+}
