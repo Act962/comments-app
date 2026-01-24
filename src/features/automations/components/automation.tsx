@@ -10,11 +10,57 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CheckIcon, PlusIcon } from "lucide-react";
+import {
+  userCreateAutomation,
+  useSuspenseAutomations,
+} from "../hooks/use-automations";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from "@/components/ui/item";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
 
 export const WorkflowList = () => {
+  const { data: automations } = useSuspenseAutomations();
   return (
     <div className="grid grid-cols-1 lg:grid-cols-6 gap-5">
-      <div className="lg:col-span-4">Automações</div>
+      <div className="lg:col-span-4">
+        {automations.length === 0 && (
+          <Item variant="outline">
+            <ItemContent>
+              <ItemTitle>Sem automações</ItemTitle>
+              <ItemDescription>
+                Você ainda não tem nenhuma automação
+              </ItemDescription>
+            </ItemContent>
+          </Item>
+        )}
+        {automations.map((automation) => (
+          <Item key={automation.id} variant="outline">
+            <ItemContent>
+              <ItemTitle>{automation.name}</ItemTitle>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {automation.keywords.length === 0 && (
+                  <Badge>Sem palavras-chave</Badge>
+                )}
+                {automation.keywords.map((keyword) => (
+                  <Badge key={keyword.id}>{keyword.word}</Badge>
+                ))}
+              </div>
+            </ItemContent>
+            <ItemActions>
+              <Button variant="secondary" asChild>
+                <Link href={`/workflows/${automation.id}`}>Iniciar</Link>
+              </Button>
+            </ItemActions>
+          </Item>
+        ))}
+      </div>
       <div className="lg:col-span-2">
         <Card>
           <CardHeader className="space-y-0">
@@ -50,15 +96,23 @@ export const WorkflowList = () => {
 };
 
 export const WorkflowHeader = ({ disabled }: { disabled?: boolean }) => {
+  const createMutation = userCreateAutomation();
+
+  const onCreate = () => {
+    createMutation.mutate({
+      name: "Sem título",
+    });
+  };
+
   return (
     <>
       <EntityHeader
         title="Automações"
         description="Gerencie suas automações"
         disabled={disabled}
-        onNew={() => {}}
+        onNew={onCreate}
         newButtonLabel="Nova automação"
-        isCreating={false}
+        isCreating={createMutation.isPending}
       />
     </>
   );

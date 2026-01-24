@@ -1,9 +1,9 @@
-import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { requireAuth } from "@/lib/auth-utils";
+import React from "react";
 
-export default async function MainLayout({
+export default async function Layout({
   children,
 }: {
   children: React.ReactNode;
@@ -13,10 +13,7 @@ export default async function MainLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <main className="flex-1">
-        <AppHeader />
-        {children}
-      </main>
+      <SidebarInset className="bg-accent/20">{children}</SidebarInset>
     </SidebarProvider>
   );
 }

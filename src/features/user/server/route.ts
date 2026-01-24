@@ -3,7 +3,7 @@ import { refresshToken } from "@/lib/fetch";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 
-export const workflowsRouter = createTRPCRouter({
+export const userRouter = createTRPCRouter({
   refreshTokens: protectedProcedure.mutation(async ({ ctx }) => {
     const user = await prisma.user.findUnique({
       where: {
