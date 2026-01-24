@@ -1,6 +1,8 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { stripe } from "@better-auth/stripe";
 import prisma from "./db";
+import { stripeClient } from "./stripe";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -12,4 +14,11 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     },
   },
+  // plugins: [
+  //   stripe({
+  //     stripeClient,
+  //     stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
+  //     createCustomerOnSignUp: true,
+  //   }),
+  // ],
 });
