@@ -9,8 +9,22 @@ import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const hub = searchParams.get("hub.challenge");
-  return new NextResponse(hub);
+
+  const mode = searchParams.get("hub.mode");
+  const token = searchParams.get("hub.verify_token");
+  const challenge = searchParams.get("hub.challenge");
+
+  // opcional, mas recomendado
+  if (mode === "subscribe" && challenge) {
+    return new NextResponse(challenge, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/plain",
+      },
+    });
+  }
+
+  return new NextResponse("Forbidden", { status: 403 });
 }
 
 export async function POST(req: Request) {
@@ -125,5 +139,23 @@ export async function POST(req: Request) {
     if (!matcher) {
       // Verificar se o usuário tem algum plano
     }
-  } catch (error) {}
+
+    return NextResponse.json(
+      {
+        message: "No automation set",
+      },
+      {
+        status: 404,
+      },
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        message: "No automation set",
+      },
+      {
+        status: 500,
+      },
+    );
+  }
 }

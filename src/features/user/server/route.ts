@@ -1,8 +1,10 @@
 import { InstagramPostProps } from "@/features/automations/types";
 import prisma from "@/lib/db";
-import { refresshToken } from "@/lib/fetch";
+import { generateTokens, refresshToken } from "@/lib/fetch";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
+import axios from "axios";
+import { z } from "zod";
 
 export const userRouter = createTRPCRouter({
   refreshTokens: protectedProcedure.mutation(async ({ ctx }) => {
@@ -90,4 +92,62 @@ export const userRouter = createTRPCRouter({
       status: posts.status,
     };
   }),
+  onIntegration: protectedProcedure
+    .input(
+      z.object({
+        code: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const integration = await prisma.user.findUnique({
+        where: {
+          id: ctx.auth.user.id,
+        },
+        include: {
+          integrations: {
+            where: {
+              name: "INSTAGRAM",
+            },
+          },
+        },
+      });
+
+      if (integration && integration.integrations.length === 0) {
+        const token = await generateTokens(input.code);
+        console.log(token);
+
+        if (token) {
+          const insta_id = await axios.get(
+            `${process.env.INSTAGRAM_BASE_URL}/me?fields=user_id&access_token=${token.access_token}`,
+          );
+
+          const today = new Date();
+          const expire_date = today.setDate(today.getDate() + 60);
+          const create = await prisma.user.update({
+            where: {
+              id: ctx.auth.user.id,
+            },
+            data: {
+              integrations: {
+                create: {
+                  token,
+                  expiresAt: new Date(expire_date),
+                  instagramId: insta_id.data.user_id,
+                },
+              },
+            },
+            select: {
+              name: true,
+            },
+          });
+
+          return create;
+        }
+      }
+
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Error on integration",
+      });
+    }),
 });
