@@ -53,5 +53,32 @@ export const userRouter = createTRPCRouter({
         }
       }
     }
+
+    return user;
+  }),
+  getPosts: protectedProcedure.query(async ({ ctx }) => {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: ctx.auth.user.id,
+      },
+      include: {
+        integrations: true,
+        automations: true,
+      },
+    });
+
+    const instagram = user?.integrations.find(
+      (integration) => integration.name === "INSTAGRAM",
+    );
+
+    const posts = await fetch(
+      `${process.env.INSTAGRAM_BASE_URL}/me/media?fields=id,caption,media_url,media_type,timestamp&limit=10&access_token=${instagram?.token}`,
+    );
+
+    const parsed = await posts.json();
+
+    console.log(parsed);
+
+    return parsed;
   }),
 });

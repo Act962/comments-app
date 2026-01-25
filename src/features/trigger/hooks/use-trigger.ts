@@ -1,5 +1,6 @@
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export const useCreateTrigger = () => {
   const trpc = useTRPC();
@@ -8,6 +9,7 @@ export const useCreateTrigger = () => {
   return useMutation(
     trpc.trigger.create.mutationOptions({
       onSuccess: (data) => {
+        toast.success("Gatilho criado com sucesso");
         queryClient.invalidateQueries(
           trpc.automations.getOne.queryOptions({
             id: data.automationId!,
