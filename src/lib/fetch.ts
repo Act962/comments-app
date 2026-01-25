@@ -6,3 +6,29 @@ export const refresshToken = async (token: string) => {
 
   return refresh_token.data;
 };
+
+export const sendDM = async (
+  userId: string,
+  recieverId: string,
+  prompt: string,
+  token: string,
+) => {
+  console.log("Sending message");
+  return await axios.post(
+    `${process.env.INSTAGRAM_BASE_URL}/v24.0/${userId}/messages`,
+    {
+      recipient: {
+        id: recieverId,
+      },
+      message: {
+        text: prompt,
+      },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    },
+  );
+};

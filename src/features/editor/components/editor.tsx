@@ -4,6 +4,7 @@ import { useSuspenseAutomation } from "@/features/automations/hooks/use-automati
 import { Trigger } from "./trigger";
 import { BadgeAlertIcon } from "lucide-react";
 import { ThenNode } from "./then-node";
+import { PostNode } from "./post-node";
 
 export default function Editor({ workflowId }: { workflowId: string }) {
   const { data: automation } = useSuspenseAutomation(workflowId);
@@ -19,6 +20,7 @@ export default function Editor({ workflowId }: { workflowId: string }) {
           <Trigger workflowId={workflowId} />
         </div>
         <ThenNode automationId={workflowId} />
+        <PostNode automationId={workflowId} />
       </div>
     </div>
   );

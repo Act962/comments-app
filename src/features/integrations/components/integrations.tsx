@@ -11,6 +11,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { Button } from "@/components/ui/button";
+import { onInstagramOAuth } from "@/actions/integrations";
 
 export const IntegrationsList = () => {
   return (
@@ -34,6 +35,10 @@ export const IngtegrationCard = ({
   icon,
   strategy,
 }: IntegrationCardProps) => {
+  const onInstaOAuth = () => onInstagramOAuth(strategy);
+
+  // const integrated = Integrations.find((integration) => integration.strategy === strategy);
+
   const Icon = icon;
   return (
     <Item size="sm" variant="outline">
@@ -45,7 +50,7 @@ export const IngtegrationCard = ({
         <ItemDescription>{description}</ItemDescription>
       </ItemContent>
       <ItemActions>
-        <Button>Conectar</Button>
+        <Button onClick={onInstaOAuth}>Conectar</Button>
       </ItemActions>
     </Item>
   );

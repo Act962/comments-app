@@ -1,3 +1,4 @@
+import { InstagramPostProps } from "@/features/automations/types";
 import prisma from "@/lib/db";
 import { refresshToken } from "@/lib/fetch";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
@@ -75,10 +76,18 @@ export const userRouter = createTRPCRouter({
       `${process.env.INSTAGRAM_BASE_URL}/me/media?fields=id,caption,media_url,media_type,timestamp&limit=10&access_token=${instagram?.token}`,
     );
 
+    // if (!posts.ok) {
+    //   throw new TRPCError({
+    //     code: "INTERNAL_SERVER_ERROR",
+    //     message: "Failed to fetch posts",
+    //   });
+    // }
+
     const parsed = await posts.json();
 
-    console.log(parsed);
-
-    return parsed;
+    return {
+      data: parsed.data as InstagramPostProps[],
+      status: posts.status,
+    };
   }),
 });

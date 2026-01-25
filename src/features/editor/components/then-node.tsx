@@ -19,6 +19,7 @@ export function ThenNode({ automationId }: { automationId: string }) {
           orientation="vertical"
           className="bottom-full flex-1 border border-accent"
         />
+        <span className="size-[3px] bg-accent rounded-full" />
       </div>
 
       <div className="flex gap-x-2 items-center">
@@ -46,7 +47,7 @@ export function ThenNode({ automationId }: { automationId: string }) {
       {automation.posts.length > 0 ? (
         <></>
       ) : commentTrigger ? (
-        <PostButton />
+        <PostButton automationId={automationId} />
       ) : (
         <></>
       )}

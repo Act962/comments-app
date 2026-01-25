@@ -70,6 +70,32 @@ export const automationsRouter = createTRPCRouter({
 
       return automation;
     }),
+  savePost: protectedProcedure
+    .input(
+      z.object({
+        automationId: z.string(),
+        posts: z.array(
+          z.object({
+            postId: z.string(),
+            caption: z.string().optional(),
+            media: z.string(),
+            mediaType: z.enum(["IMAGE", "VIDEO", "CAROSEL_ALBUM"]),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await prisma.post.createMany({
+        data: input.posts.map((post) => ({
+          ...post,
+          automationId: input.automationId,
+        })),
+      });
+
+      return {
+        automationId: input.automationId,
+      };
+    }),
   updateIntegrationToken: protectedProcedure
     .input(
       z.object({

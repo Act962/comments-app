@@ -6,7 +6,8 @@ export const useQueryPosts = () => {
   const { data, isPending } = useQuery(trpc.user.getPosts.queryOptions());
 
   return {
-    posts: data,
+    posts: data?.data,
+    status: data?.status,
     isLoading: isPending,
   };
 };
