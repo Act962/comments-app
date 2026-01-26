@@ -56,11 +56,22 @@ export const generateTokens = async (code: string) => {
 
   if (token.permissions.length > 0) {
     console.log(token, "got permissions");
+    console.log("Token Acesss", token.access_token);
+    console.log("Client Secret", process.env.INSTAGRAM_CLIENT_SECRET);
+    console.log("Base Url", process.env.INSTAGRAM_BASE_URL);
 
-    const long_token = await axios.get(
-      `${process.env.INSTAGRAM_BASE_URL}/access_token?grant_type=ig_exchange_token&client_secret=${process.env.INSTAGRAM_CLIENT_SECRET}&access_token=${token.access_token}`,
+    const longToken = await fetch(
+      `https://graph.instagram.com/access_token` +
+        `?grant_type=ig_exchange_token` +
+        `&client_secret=${process.env.INSTAGRAM_CLIENT_SECRET}` +
+        `&access_token=${token.access_token}`,
+      { method: "GET" },
     );
 
-    return long_token.data;
+    const long_token = await longToken.json();
+
+    console.log("Token Long", long_token);
+
+    return long_token.access_token;
   }
 };
