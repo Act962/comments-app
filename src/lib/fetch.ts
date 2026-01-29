@@ -1,3 +1,5 @@
+"use server";
+
 import axios from "axios";
 export const refresshToken = async (token: string) => {
   const refresh_token = await axios.get(
@@ -15,7 +17,7 @@ export const sendDM = async (
 ) => {
   console.log("Sending message");
   return await axios.post(
-    `${process.env.INSTAGRAM_BASE_URL}/v24.0/${userId}/messages`,
+    `${process.env.INSTAGRAM_BASE_URL}/${userId}/messages`,
     {
       recipient: {
         id: recieverId,
@@ -55,11 +57,6 @@ export const generateTokens = async (code: string) => {
   const token = await shortTokenRes.json();
 
   if (token.permissions.length > 0) {
-    console.log(token, "got permissions");
-    console.log("Token Acesss", token.access_token);
-    console.log("Client Secret", process.env.INSTAGRAM_CLIENT_SECRET);
-    console.log("Base Url", process.env.INSTAGRAM_BASE_URL);
-
     const longToken = await fetch(
       `https://graph.instagram.com/access_token` +
         `?grant_type=ig_exchange_token` +

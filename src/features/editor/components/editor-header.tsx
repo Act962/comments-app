@@ -104,10 +104,15 @@ export const EditorBreadcrumbs = ({ workflowId }: { workflowId: string }) => {
   );
 };
 
+export const EditorOption = ({ workflowId }: { workflowId: string }) => {
+  return <div></div>;
+};
+
 export const EditorHeader = ({ workflowId }: { workflowId: string }) => {
   return (
     <div className="flex h-12 shrink-0 items-center justify-between gap-2 border-b px-4 bg-background">
       <EditorBreadcrumbs workflowId={workflowId} />
+      <EditorOption workflowId={workflowId} />
     </div>
   );
 };

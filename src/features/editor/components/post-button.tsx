@@ -27,11 +27,18 @@ export function PostButton({ automationId }: { automationId: string }) {
   const savePost = useSavePost();
 
   const onSelectPost = (post: Post) => {
-    setSelectedPost((prev) => [...prev, post]);
+    setSelectedPost((prev) => {
+      if (prev.find((p) => p.postid === post.postid)) {
+        return prev.filter((p) => p.postid !== post.postid);
+      }
+      return [...prev, post];
+    });
   };
 
   const onRemovePost = (post: Post) => {
-    setSelectedPost((prev) => prev.filter((p) => p.postid !== post.postid));
+    setSelectedPost((prev) => {
+      return prev.filter((p) => p.postid !== post.postid);
+    });
   };
 
   const onSavePost = () => {

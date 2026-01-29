@@ -117,9 +117,15 @@ export const userRouter = createTRPCRouter({
         console.log(token);
 
         if (token) {
-          const insta_id = await axios.get(
-            `${process.env.INSTAGRAM_BASE_URL}/me?fields=user_id&access_token=${token.access_token}`,
+          // const insta_id = await axios.get(
+          //   `${process.env.INSTAGRAM_BASE_URL}/me?fields=id&access_token=${token.access_token}`,
+          // );
+
+          const get_insta_id = await fetch(
+            `${process.env.INSTAGRAM_BASE_URL}/me?fields=id&access_token=${token}`,
           );
+
+          const instaId = await get_insta_id.json();
 
           const today = new Date();
           const expire_date = today.setDate(today.getDate() + 60);
@@ -132,7 +138,7 @@ export const userRouter = createTRPCRouter({
                 create: {
                   token,
                   expiresAt: new Date(expire_date),
-                  instagramId: insta_id.data.user_id,
+                  instagramId: instaId.id,
                 },
               },
             },

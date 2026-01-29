@@ -1,3 +1,4 @@
+import { Spinner } from "@/components/ui/spinner";
 import { prefetchAutomation } from "@/features/automations/server/prefetch";
 import Editor from "@/features/editor/components/editor";
 import { EditorHeader } from "@/features/editor/components/editor-header";
@@ -15,7 +16,13 @@ export default async function Workflow({ params }: Props) {
   return (
     <HydrateClient>
       <ErrorBoundary fallback={<div>Error</div>}>
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense
+          fallback={
+            <div className="h-full items-center justify-center flex">
+              <Spinner />
+            </div>
+          }
+        >
           <EditorHeader workflowId={workflowId} />
           <main className="flex-1">
             <Editor workflowId={workflowId} />
