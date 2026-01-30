@@ -13,7 +13,7 @@ export default async function Layout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="bg-accent/20">{children}</SidebarInset>
+      <SidebarInset>{children}</SidebarInset>
     </SidebarProvider>
   );
 }

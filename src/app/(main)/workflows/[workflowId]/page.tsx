@@ -23,10 +23,12 @@ export default async function Workflow({ params }: Props) {
             </div>
           }
         >
-          <EditorHeader workflowId={workflowId} />
-          <main className="flex-1">
-            <Editor workflowId={workflowId} />
-          </main>
+          <div className="h-screen flex flex-col">
+            <EditorHeader workflowId={workflowId} />
+            <main className="flex-1 overflow-y-auto">
+              <Editor workflowId={workflowId} />
+            </main>
+          </div>
         </Suspense>
       </ErrorBoundary>
     </HydrateClient>

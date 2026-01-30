@@ -18,6 +18,7 @@ export const getKeywordAutomation = async (
   return await prisma.automation.findUnique({
     where: {
       id: automationId,
+      active: true,
     },
     include: {
       dms: dm,

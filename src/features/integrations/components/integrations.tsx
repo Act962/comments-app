@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/item";
 import { Button } from "@/components/ui/button";
 import { onInstagramOAuth } from "@/actions/integrations";
+import { useSuspenseIntegrations } from "../hooks/use-integration";
 
 export const IntegrationsList = () => {
   return (
@@ -36,8 +37,9 @@ export const IngtegrationCard = ({
   strategy,
 }: IntegrationCardProps) => {
   const onInstaOAuth = () => onInstagramOAuth(strategy);
+  const { data } = useSuspenseIntegrations();
 
-  // const integrated = Integrations.find((integration) => integration.strategy === strategy);
+  const integrated = data.find((integration) => integration.name === strategy);
 
   const Icon = icon;
   return (
@@ -50,7 +52,9 @@ export const IngtegrationCard = ({
         <ItemDescription>{description}</ItemDescription>
       </ItemContent>
       <ItemActions>
-        <Button onClick={onInstaOAuth}>Conectar</Button>
+        <Button onClick={onInstaOAuth} disabled={!!integrated}>
+          {integrated ? "Conectado" : "Conectar"}
+        </Button>
       </ItemActions>
     </Item>
   );

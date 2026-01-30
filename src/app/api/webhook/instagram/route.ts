@@ -4,7 +4,7 @@ import {
   matchKeyword,
   trackResponse,
 } from "@/actions/webhook";
-import { sendDM } from "@/lib/fetch";
+import { sendCommentReply, sendDM, sendPrivateMessage } from "@/lib/fetch";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
@@ -29,6 +29,9 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const webhook_payload = await req.json();
+
+  console.dir(webhook_payload, { depth: null });
+
   let matcher;
   try {
     if (webhook_payload.entry[0].messaging) {
@@ -45,6 +48,7 @@ export async function POST(req: Request) {
 
     if (matcher && matcher.automationId) {
       // We have a keyword matcher
+      console.log("Matcher found", matcher);
       if (webhook_payload.entry[0].messaging) {
         const automation = await getKeywordAutomation(
           matcher.automationId,
@@ -54,7 +58,9 @@ export async function POST(req: Request) {
         if (automation && automation.triggers) {
           if (
             automation.listeners &&
-            automation.listeners.listener === "MESSAGE"
+            automation.listeners.listener === "MESSAGE" &&
+            webhook_payload.entry[0].id !==
+              webhook_payload.entry[0].changes[0].value.from.id
           ) {
             const direct_message = await sendDM(
               webhook_payload.entry[0].id,
@@ -88,9 +94,13 @@ export async function POST(req: Request) {
         }
       }
 
+      // accountId !== fromId
+
       if (
         webhook_payload.entry[0].changes &&
-        webhook_payload.entry[0].changes[0].field === "comment"
+        webhook_payload.entry[0].changes[0].field === "comments" &&
+        webhook_payload.entry[0].id !==
+          webhook_payload.entry[0].changes[0].value.from.id
       ) {
         const automation = await getKeywordAutomation(
           matcher.automationId,
@@ -105,12 +115,22 @@ export async function POST(req: Request) {
         if (automation && automations_post && automation.triggers) {
           if (automation.listeners) {
             if (automation.listeners.listener === "MESSAGE") {
-              const direct_message = await sendDM(
+              console.log("Private message listener");
+              const direct_message = await sendPrivateMessage(
                 webhook_payload.entry[0].id,
-                webhook_payload.entry[0].changes[0].value.from.id,
+                webhook_payload.entry[0].changes[0].value.id,
                 automation.listeners.prompt,
                 automation.user.integrations[0].token,
               );
+
+              if (automation.listeners.commentReply) {
+                await sendCommentReply(
+                  webhook_payload.entry[0].changes[0].value.id,
+                  automation.listeners.commentReply,
+                  automation.user.integrations[0].token,
+                );
+              }
+
               if (direct_message.status === 200) {
                 const tracked = await trackResponse(automation.id, "COMMENT");
 

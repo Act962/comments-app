@@ -44,6 +44,16 @@ export const automationsRouter = createTRPCRouter({
         },
       });
     }),
+  delete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return await prisma.automation.delete({
+        where: {
+          id: input.id,
+          userId: ctx.auth.user.id,
+        },
+      });
+    }),
   updateName: protectedProcedure
     .input(
       z.object({

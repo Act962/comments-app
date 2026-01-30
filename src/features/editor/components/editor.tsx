@@ -7,9 +7,9 @@ import { ThenNode } from "./then-node";
 import { PostNode } from "./post-node";
 
 export default function Editor({ workflowId }: { workflowId: string }) {
-  const { data: automation } = useSuspenseAutomation(workflowId);
+  // const { data: automation } = useSuspenseAutomation(workflowId);
   return (
-    <div className="flex items-start py-10 justify-center h-full px-4">
+    <div className="flex items-start py-10 justify-center px-4">
       <div className="flex flex-col items-center gap-y-20 w-full">
         {/* Wheen */}
         <div className="w-full bg-card border border-border lg:w-10/12 xl:w-6/12 p-5 rounded-xl flex flex-col  gap-y-3">

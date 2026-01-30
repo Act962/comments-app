@@ -15,6 +15,8 @@ export const Trigger = ({ workflowId }: { workflowId: string }) => {
         <ActiveTrigger
           type={automation.triggers[0].type}
           keywords={automation.keywords}
+          id={automation.triggers[0].id}
+          automationId={workflowId}
         />
 
         {automation.triggers.length > 1 && (
@@ -24,6 +26,8 @@ export const Trigger = ({ workflowId }: { workflowId: string }) => {
             <ActiveTrigger
               type={automation.triggers[1].type}
               keywords={automation.keywords}
+              id={automation.triggers[1].id}
+              automationId={workflowId}
             />
           </>
         )}

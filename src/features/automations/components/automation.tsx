@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CheckIcon, PlusIcon } from "lucide-react";
+import { ArrowUpRightIcon, CheckIcon, PlusIcon } from "lucide-react";
 import {
   userCreateAutomation,
   useSuspenseAutomations,
@@ -24,12 +24,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export const WorkflowList = () => {
   const { data: automations } = useSuspenseAutomations();
   return (
     <div className="grid grid-cols-1 lg:grid-cols-6 gap-5">
-      <div className="lg:col-span-4">
+      <div className="lg:col-span-4 space-y-2">
         {automations.length === 0 && (
           <Item variant="outline">
             <ItemContent>
@@ -55,7 +56,7 @@ export const WorkflowList = () => {
             </ItemContent>
             <ItemActions>
               <Button variant="secondary" asChild>
-                <Link href={`/workflows/${automation.id}`}>Iniciar</Link>
+                <Link href={`/workflows/${automation.id}`}>Ver</Link>
               </Button>
             </ItemActions>
           </Item>
@@ -96,12 +97,21 @@ export const WorkflowList = () => {
 };
 
 export const WorkflowHeader = ({ disabled }: { disabled?: boolean }) => {
+  const router = useRouter();
   const createMutation = userCreateAutomation();
 
   const onCreate = () => {
-    createMutation.mutate({
-      name: "Sem título",
-    });
+    createMutation.mutate(
+      {
+        name: "Sem título",
+      },
+      {
+        onSuccess: (data) => {
+          console.log(data);
+          router.push(`/workflows/${data.id}`);
+        },
+      },
+    );
   };
 
   return (

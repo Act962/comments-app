@@ -19,3 +19,21 @@ export const useCreateTrigger = () => {
     }),
   );
 };
+
+export const useDeleteTrigger = () => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    trpc.trigger.delete.mutationOptions({
+      onSuccess: (data) => {
+        toast.success("Gatilho criado com sucesso");
+        queryClient.invalidateQueries(
+          trpc.automations.getOne.queryOptions({
+            id: data.automationId!,
+          }),
+        );
+      },
+    }),
+  );
+};

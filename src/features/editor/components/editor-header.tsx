@@ -11,10 +11,23 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 
 import {
+  useDeleteAutomation,
   useSuspenseAutomation,
   useUpdateAutomationName,
 } from "../../automations/hooks/use-automations";
 import { useEffect, useRef, useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { EllipsisIcon, Trash2Icon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { DeleteAutomationModal } from "@/components/modal/delete-automation";
 
 export const EditorNameInput = ({ workflowId }: { workflowId: string }) => {
   const { data: automation } = useSuspenseAutomation(workflowId);
@@ -105,12 +118,58 @@ export const EditorBreadcrumbs = ({ workflowId }: { workflowId: string }) => {
 };
 
 export const EditorOption = ({ workflowId }: { workflowId: string }) => {
-  return <div></div>;
+  const router = useRouter();
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const deleteWorkflow = useDeleteAutomation();
+
+  const onDelete = () => {
+    deleteWorkflow.mutate(
+      {
+        id: workflowId,
+      },
+      {
+        onSuccess: () => {
+          router.push("/workflows");
+          setOpenDeleteModal(false);
+        },
+      },
+    );
+  };
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <EllipsisIcon className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              role="button"
+              variant="destructive"
+              className="cursor-pointer"
+              onClick={() => setOpenDeleteModal(true)}
+            >
+              <Trash2Icon className="size-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <DeleteAutomationModal
+        open={openDeleteModal}
+        onOpenChange={setOpenDeleteModal}
+        onDelete={onDelete}
+      />
+    </>
+  );
 };
 
 export const EditorHeader = ({ workflowId }: { workflowId: string }) => {
   return (
-    <div className="flex h-12 shrink-0 items-center justify-between gap-2 border-b px-4 bg-background">
+    <div className="sticky top-0 z-50 flex h-12 shrink-0 items-center justify-between gap-2 border-b px-4 bg-background">
       <EditorBreadcrumbs workflowId={workflowId} />
       <EditorOption workflowId={workflowId} />
     </div>

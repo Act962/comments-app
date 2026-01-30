@@ -82,6 +82,23 @@ export const useUpdateAutomationName = () => {
   );
 };
 
+export const useDeleteAutomation = () => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    trpc.automations.delete.mutationOptions({
+      onSuccess: () => {
+        toast.success("Automação deletada com sucesso");
+        queryClient.invalidateQueries(trpc.automations.getMany.queryOptions());
+      },
+      onError: () => {
+        toast.error("Erro ao deletar automação");
+      },
+    }),
+  );
+};
+
 export const useSavePost = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();

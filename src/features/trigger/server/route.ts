@@ -10,11 +10,24 @@ export const triggerRouter = createTRPCRouter({
         automationId: z.string(),
       }),
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       return await prisma.trigger.create({
         data: {
           type: input.type,
           automationId: input.automationId,
+        },
+      });
+    }),
+  delete: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      return await prisma.trigger.delete({
+        where: {
+          id: input.id,
         },
       });
     }),

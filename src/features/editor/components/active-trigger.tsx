@@ -1,10 +1,13 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { InstagramIcon, SendIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { InstagramIcon, SendIcon, TrashIcon } from "lucide-react";
 
 interface ActiveTriggerProps {
   type: string;
+  id: string;
+  automationId: string;
   keywords: {
     id: string;
     word: string;
@@ -12,9 +15,14 @@ interface ActiveTriggerProps {
   }[];
 }
 
-export const ActiveTrigger = ({ type, keywords }: ActiveTriggerProps) => {
+export const ActiveTrigger = ({
+  type,
+  id,
+  automationId,
+  keywords,
+}: ActiveTriggerProps) => {
   return (
-    <div className="bg-background p-3 rounded-xl w-full">
+    <div className="bg-background p-3 rounded-xl w-full group">
       <div className="flex gap-x-2 items-center">
         {type === "COMMENT" ? <InstagramIcon /> : <SendIcon />}
         <p>
@@ -22,6 +30,14 @@ export const ActiveTrigger = ({ type, keywords }: ActiveTriggerProps) => {
             ? "Quando alguém comenta em um de meus posts"
             : "Quando alguém me envia mensagem no direct"}
         </p>
+
+        {/* <Button
+          className="ml-auto opacity-0 group-hover:opacity-100"
+          variant="ghost"
+          size="icon"
+        >
+          <TrashIcon />
+        </Button> */}
       </div>
       <p className="text-muted-foreground">
         {type === "COMMENT"

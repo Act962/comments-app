@@ -3,7 +3,6 @@ import prisma from "@/lib/db";
 import { generateTokens, refresshToken } from "@/lib/fetch";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
-import axios from "axios";
 import { z } from "zod";
 
 export const userRouter = createTRPCRouter({
@@ -31,8 +30,6 @@ export const userRouter = createTRPCRouter({
       const days = Math.floor(time_left / (1000 * 3600 * 24));
 
       if (days < 5) {
-        console.log("Refresh");
-
         const refresh = await refresshToken(user.integrations[0].token);
 
         const today = new Date();
@@ -114,13 +111,8 @@ export const userRouter = createTRPCRouter({
 
       if (integration && integration.integrations.length === 0) {
         const token = await generateTokens(input.code);
-        console.log(token);
 
         if (token) {
-          // const insta_id = await axios.get(
-          //   `${process.env.INSTAGRAM_BASE_URL}/me?fields=id&access_token=${token.access_token}`,
-          // );
-
           const get_insta_id = await fetch(
             `${process.env.INSTAGRAM_BASE_URL}/me?fields=id&access_token=${token}`,
           );

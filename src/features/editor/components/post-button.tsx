@@ -34,13 +34,6 @@ export function PostButton({ automationId }: { automationId: string }) {
       return [...prev, post];
     });
   };
-
-  const onRemovePost = (post: Post) => {
-    setSelectedPost((prev) => {
-      return prev.filter((p) => p.postid !== post.postid);
-    });
-  };
-
   const onSavePost = () => {
     savePost.mutate({
       automationId,
@@ -81,26 +74,15 @@ export function PostButton({ automationId }: { automationId: string }) {
                   }
                 >
                   {selectedPost.find((p) => p.postid === post.id) && (
-                    <CheckIcon className="size-4" fill="white" stroke="black" />
+                    <CheckIcon className="size-5 z-10  absolute top-2 right-2 stroke-4" />
                   )}
-                  {/* <Image
-                  fill
-                  sizes="100vw"
-                  src={post.media_url}
-                  alt={"post image"}
-                  className={cn(
-                    "object-fill size-full hover:opacity-75 transition duration-100",
-                    selectedPost.find((p) => p.postid === post.id) &&
-                      "opacity-75",
-                  )}
-                /> */}
                   <img
                     src={post.media_url}
                     alt={"post image"}
                     className={cn(
                       "object-fill size-full hover:opacity-75 transition duration-100",
                       selectedPost.find((p) => p.postid === post.id) &&
-                        "opacity-75",
+                        "opacity-50",
                     )}
                   />
                 </div>

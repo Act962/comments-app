@@ -38,6 +38,9 @@ export function Keywords({ automationId }: Props) {
           setKeywords((prev) => [...prev, data]);
           setKeyword("");
         },
+        onSettled(data, error, variables, onMutateResult, context) {
+          console.log(data, error, variables, onMutateResult, context);
+        },
       },
     );
   };

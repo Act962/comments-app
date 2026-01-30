@@ -15,7 +15,6 @@ export const sendDM = async (
   prompt: string,
   token: string,
 ) => {
-  console.log("Sending message");
   return await axios.post(
     `${process.env.INSTAGRAM_BASE_URL}/${userId}/messages`,
     {
@@ -25,6 +24,50 @@ export const sendDM = async (
       message: {
         text: prompt,
       },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    },
+  );
+};
+
+export const sendPrivateMessage = async (
+  userId: string,
+  commentId: string,
+  prompt: string,
+  token: string,
+) => {
+  return await axios.post(
+    `${process.env.INSTAGRAM_BASE_URL}/${userId}/messages`,
+    {
+      recipient: {
+        comment_id: commentId,
+      },
+      message: {
+        text: prompt,
+      },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    },
+  );
+};
+
+export const sendCommentReply = async (
+  commentId: string,
+  prompt: string,
+  token: string,
+) => {
+  return await axios.post(
+    `${process.env.INSTAGRAM_BASE_URL}/${commentId}/replies`,
+    {
+      message: prompt,
     },
     {
       headers: {
@@ -66,8 +109,6 @@ export const generateTokens = async (code: string) => {
     );
 
     const long_token = await longToken.json();
-
-    console.log("Token Long", long_token);
 
     return long_token.access_token;
   }
