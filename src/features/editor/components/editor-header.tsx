@@ -13,6 +13,7 @@ import Link from "next/link";
 import {
   useDeleteAutomation,
   useSuspenseAutomation,
+  useUpdateActiveAutomation,
   useUpdateAutomationName,
 } from "../../automations/hooks/use-automations";
 import { useEffect, useRef, useState } from "react";
@@ -28,6 +29,8 @@ import { Button } from "@/components/ui/button";
 import { EllipsisIcon, Trash2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DeleteAutomationModal } from "@/components/modal/delete-automation";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export const EditorNameInput = ({ workflowId }: { workflowId: string }) => {
   const { data: automation } = useSuspenseAutomation(workflowId);
@@ -107,7 +110,7 @@ export const EditorBreadcrumbs = ({ workflowId }: { workflowId: string }) => {
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link href={`/workflows`}>Workflows</Link>
+            <Link href={`/workflows`}>Automações</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
@@ -167,11 +170,46 @@ export const EditorOption = ({ workflowId }: { workflowId: string }) => {
   );
 };
 
+export const EditorActiveToggle = ({ workflowId }: { workflowId: string }) => {
+  const { data: automation } = useSuspenseAutomation(workflowId);
+  const [active, setActive] = useState(automation?.active);
+  const updateAutomation = useUpdateActiveAutomation();
+
+  const handleToggleActive = (checked: boolean) => {
+    setActive(checked);
+    updateAutomation.mutate({
+      id: workflowId,
+      active: checked,
+    });
+  };
+
+  useEffect(() => {
+    if (automation?.active) {
+      setActive(automation.active);
+    }
+  }, [automation?.active]);
+
+  return (
+    <div className="flex items-center gap-2">
+      <Label htmlFor="active">{active ? "Ativo" : "Inativo"}</Label>
+      <Switch
+        id="active"
+        checked={active}
+        onCheckedChange={handleToggleActive}
+        disabled={updateAutomation.isPending}
+      />
+    </div>
+  );
+};
+
 export const EditorHeader = ({ workflowId }: { workflowId: string }) => {
   return (
     <div className="sticky top-0 z-50 flex h-12 shrink-0 items-center justify-between gap-2 border-b px-4 bg-background">
       <EditorBreadcrumbs workflowId={workflowId} />
-      <EditorOption workflowId={workflowId} />
+      <div className="flex items-center gap-2">
+        <EditorActiveToggle workflowId={workflowId} />
+        <EditorOption workflowId={workflowId} />
+      </div>
     </div>
   );
 };

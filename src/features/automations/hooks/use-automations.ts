@@ -82,6 +82,28 @@ export const useUpdateAutomationName = () => {
   );
 };
 
+export const useUpdateActiveAutomation = () => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    trpc.automations.updateActive.mutationOptions({
+      onSuccess: (data) => {
+        toast.success("Automação atualizada com sucesso");
+        queryClient.invalidateQueries(trpc.automations.getMany.queryOptions());
+        queryClient.invalidateQueries(
+          trpc.automations.getOne.queryOptions({
+            id: data.id,
+          }),
+        );
+      },
+      onError: () => {
+        toast.error("Erro ao atualizar automação");
+      },
+    }),
+  );
+};
+
 export const useDeleteAutomation = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();

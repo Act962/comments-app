@@ -80,6 +80,33 @@ export const automationsRouter = createTRPCRouter({
 
       return automation;
     }),
+  updateActive: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        active: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const automation = await prisma.automation.update({
+        where: {
+          id: input.id,
+          userId: ctx.auth.user.id,
+        },
+        data: {
+          active: input.active,
+        },
+      });
+
+      if (!automation) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update automation",
+        });
+      }
+
+      return automation;
+    }),
   savePost: protectedProcedure
     .input(
       z.object({
