@@ -191,8 +191,7 @@ export function RegisterForm() {
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center">
-        Ao clicar em continuar, você concorda com nossos{" "}
-        <Link href="/terms">Termos de Serviço</Link> e{" "}
+        Ao clicar em continuar, você concorda com nossa{" "}
         <Link href="/privacy-policy">Política de Privacidade</Link>.
       </FieldDescription>
     </div>
