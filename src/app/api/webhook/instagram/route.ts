@@ -59,8 +59,8 @@ export async function POST(req: Request) {
           if (
             automation.listeners &&
             automation.listeners.listener === "MESSAGE" &&
-            webhook_payload.entry[0].id !==
-              webhook_payload.entry[0].changes[0].value.from.id
+            webhook_payload.entry[0].messaging[0].sender.id !==
+              webhook_payload.entry[0].messaging[0].recipient.id
           ) {
             const direct_message = await sendDM(
               webhook_payload.entry[0].id,
