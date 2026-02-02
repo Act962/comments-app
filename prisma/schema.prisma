@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -25,6 +19,9 @@ model User {
   accounts      Account[]
   automations   Automation[]
   integrations  Integration[]
+  history       History[]
+  notifications Notification[]
+  notificationPreference NotificationPreference?
 
   @@unique([email])
   @@map("user")
@@ -158,6 +155,71 @@ model Keyword {
   @@unique([automationId, word])
 }
 
+
+model History {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         String   // "DM" or "COMMENT"
+  count        Int      @default(0)
+  date         DateTime @default(now())
+
+  @@index([userId, date])
+  @@map("history")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type      NOTIFICATION_TYPE
+  title     String
+  message   String
+  
+  // Dados contextuais (JSON flexível para diferentes tipos de notificação)
+  metadata  Json?
+  
+  // Link para onde a notificação deve redirecionar
+  link      String?
+  
+  // Status
+  read      Boolean  @default(false)
+  readAt    DateTime?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Índices para performance
+  @@index([userId, read])
+  @@index([userId, createdAt])
+  @@map("notification")
+}
+
+// Preferências de notificação do usuário
+model NotificationPreference {
+  id     String  @id @default(cuid())
+  userId String  @unique
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Canais
+  emailEnabled    Boolean @default(true)
+  pushEnabled     Boolean @default(true)
+  inAppEnabled    Boolean @default(true)
+  
+  // Tipos de notificação
+  automationAlerts Boolean @default(true)
+  dmAlerts         Boolean @default(true)
+  commentAlerts    Boolean @default(true)
+  systemAlerts     Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("notification_preference")
+}
+
 // Enums
 enum INTEGRATIONS {
   INSTAGRAM
@@ -172,4 +234,17 @@ enum MEDIA_TYPE {
 enum LISTENERS {
   SMARTAI
   MESSAGE
+}
+
+// Enum para tipos de notificação
+enum NOTIFICATION_TYPE {
+  AUTOMATION_SUCCESS    // Automação executada com sucesso
+  AUTOMATION_ERROR      // Erro na automação
+  NEW_DM                // Nova mensagem recebida
+  NEW_COMMENT           // Novo comentário
+  INTEGRATION_EXPIRED   // Integração expirou
+  INTEGRATION_ERROR     // Erro na integração
+  KEYWORD_TRIGGERED     // Palavra-chave foi acionada
+  DAILY_REPORT          // Relatório diário
+  SYSTEM                // Notificação do sistema
 }

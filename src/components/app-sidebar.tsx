@@ -198,7 +198,7 @@ export function NavUser() {
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
             side={isMobile ? "bottom" : "right"}
             align="end"
-            sideOffset={4}
+            sideOffset={12}
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
@@ -232,17 +232,18 @@ export function NavUser() {
             <DropdownMenuSeparator />
 
             <DropdownMenuGroup>
-              <DropdownMenuItem
-                onClick={() => router.push("/settings")}
-                className="cursor-pointer"
-              >
-                <BadgeCheckIcon />
-                Configurações
+              <DropdownMenuItem className="cursor-pointer" asChild>
+                <Link href={"/settings"}>
+                  <BadgeCheckIcon />
+                  Configurações
+                </Link>
               </DropdownMenuItem>
 
-              <DropdownMenuItem className="cursor-pointer">
-                <BellIcon />
-                Notificações
+              <DropdownMenuItem className="cursor-pointer" asChild>
+                <Link href={"/settings?tab=notifications"}>
+                  <BellIcon />
+                  Notificações
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

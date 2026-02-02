@@ -1,6 +1,12 @@
-import { SettingsContainer } from "@/features/settings/components/settings";
-import React from "react";
+import {
+  SettingsContainer,
+  SettingsContent,
+} from "@/features/settings/components/settings";
 
 export default function Settings() {
-  return <SettingsContainer>Page</SettingsContainer>;
+  return (
+    <SettingsContainer>
+      <SettingsContent />
+    </SettingsContainer>
+  );
 }

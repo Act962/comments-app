@@ -5,6 +5,7 @@ import { listenerRouter } from "@/features/listener/server/route";
 import { triggerRouter } from "@/features/trigger/server/route";
 import { keywordRouter } from "@/features/keyword/server/route";
 import { integrationRouter } from "@/features/integrations/server/route";
+import { notificationsRouter } from "@/features/notifications/server/route";
 
 export const appRouter = createTRPCRouter({
   user: userRouter,
@@ -13,6 +14,7 @@ export const appRouter = createTRPCRouter({
   trigger: triggerRouter,
   keyword: keywordRouter,
   integration: integrationRouter,
+  notifications: notificationsRouter,
 });
 // export type definition of API
 export type AppRouter = typeof appRouter;

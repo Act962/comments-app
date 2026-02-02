@@ -29,8 +29,8 @@ import { useRouter } from "next/navigation";
 export const WorkflowList = () => {
   const { data: automations } = useSuspenseAutomations();
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-6 gap-5">
-      <div className="lg:col-span-4 space-y-2">
+    <div className="flex flex-col gap-5">
+      <div className="space-y-2">
         {automations.length === 0 && (
           <Item variant="outline">
             <ItemContent>
@@ -47,7 +47,7 @@ export const WorkflowList = () => {
               <ItemTitle>{automation.name}</ItemTitle>
               <div className="flex flex-wrap gap-2 mt-2">
                 {automation.keywords.length === 0 && (
-                  <Badge>Sem palavras-chave</Badge>
+                  <Badge variant="secondary">Sem palavras-chave</Badge>
                 )}
                 {automation.keywords.map((keyword) => (
                   <Badge key={keyword.id}>{keyword.word}</Badge>
@@ -62,7 +62,7 @@ export const WorkflowList = () => {
           </Item>
         ))}
       </div>
-      <div className="lg:col-span-2">
+      {/* <div className="lg:col-span-2">
         <Card>
           <CardHeader className="space-y-0">
             <CardTitle>Automação</CardTitle>
@@ -91,7 +91,7 @@ export const WorkflowList = () => {
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
     </div>
   );
 };
