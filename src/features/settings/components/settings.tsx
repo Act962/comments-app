@@ -30,6 +30,7 @@ import {
   useQueryNotifications,
   useSuspenseNotifications,
 } from "@/features/notifications/hooks/use-notification";
+import { useUpdateProfile } from "@/features/user/hooks/use-user";
 import { authClient } from "@/lib/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BellIcon, CheckIcon } from "lucide-react";
@@ -49,6 +50,7 @@ type ProfileSchema = z.infer<typeof profileSchema>;
 
 export const ProfileTab = () => {
   const { data: session } = authClient.useSession();
+  const updateProfile = useUpdateProfile();
   const form = useForm<ProfileSchema>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -58,19 +60,9 @@ export const ProfileTab = () => {
   });
 
   const onSubmit = async (data: ProfileSchema) => {
-    await authClient.updateUser(
-      {
-        name: data.name,
-      },
-      {
-        onSuccess: () => {
-          toast.success("Perfil atualizado com sucesso!");
-        },
-        onError: () => {
-          toast.error("Erro ao atualizar perfil");
-        },
-      },
-    );
+    updateProfile.mutate({
+      name: data.name,
+    });
   };
 
   useEffect(() => {

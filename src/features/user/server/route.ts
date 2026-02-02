@@ -6,6 +6,26 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 export const userRouter = createTRPCRouter({
+  updateProfile: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(1),
+        image: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = await prisma.user.update({
+        where: {
+          id: ctx.auth.user.id,
+        },
+        data: {
+          name: input.name,
+          image: input.image,
+        },
+      });
+
+      return user;
+    }),
   refreshTokens: protectedProcedure.mutation(async ({ ctx }) => {
     const user = await prisma.user.findUnique({
       where: {
