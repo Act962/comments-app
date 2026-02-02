@@ -5,6 +5,7 @@ import {
   trackResponse,
 } from "@/actions/webhook";
 import { sendCommentReply, sendDM, sendPrivateMessage } from "@/lib/fetch";
+import { openaiClient } from "@/lib/openai";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
@@ -87,9 +88,38 @@ export async function POST(req: Request) {
           // Verificar se o usuário tem algum plano
           if (
             automation.listeners &&
-            automation.listeners.listener === "SMARTAI"
+            automation.listeners.listener === "SMARTAI" &&
+            webhook_payload.entry[0].messaging[0].sender.id !==
+              webhook_payload.entry[0].messaging[0].recipient.id
           ) {
             // Implementar a inteligência artificial - automation.listeners.prompt
+            const response = await openaiClient.responses.create({
+              model: "gpt-4o-mini",
+              input: `${automation.listeners.prompt}: Mantenha as respostas com menos de 2 frases. Responda apenas com o texto da resposta, sem formatação ou tags adicionais. `,
+            });
+
+            if (response.output_text) {
+              const direct_message = await sendDM(
+                webhook_payload.entry[0].id,
+                webhook_payload.entry[0].messaging[0].sender.id,
+                response.output_text,
+                automation.user.integrations[0].token,
+              );
+
+              if (direct_message.status === 200) {
+                const tracked = await trackResponse(automation.id, "DM");
+                if (tracked) {
+                  return NextResponse.json(
+                    {
+                      message: "Message sent",
+                    },
+                    {
+                      status: 200,
+                    },
+                  );
+                }
+              }
+            }
           }
         }
       }
@@ -149,7 +179,40 @@ export async function POST(req: Request) {
 
             // Adicionar plano
             if (automation.listeners.listener === "SMARTAI") {
-              ///
+              const response = await openaiClient.responses.create({
+                model: "gpt-4o-mini",
+                input: `${automation.listeners.prompt}: Mantenha as respostas com menos de 2 frases. Responda apenas com o texto da resposta, sem formatação ou tags adicionais.`,
+              });
+
+              if (response.output_text) {
+                const direct_message = await sendPrivateMessage(
+                  webhook_payload.entry[0].id,
+                  webhook_payload.entry[0].changes[0].value.id,
+                  response.output_text,
+                  automation.user.integrations[0].token,
+                );
+
+                if (direct_message.status === 200) {
+                  await trackResponse(automation.id, "COMMENT");
+                }
+
+                if (automation.listeners.commentReply) {
+                  await sendCommentReply(
+                    webhook_payload.entry[0].changes[0].value.id,
+                    automation.listeners.commentReply,
+                    automation.user.integrations[0].token,
+                  );
+                }
+
+                return NextResponse.json(
+                  {
+                    message: "Message sent",
+                  },
+                  {
+                    status: 200,
+                  },
+                );
+              }
             }
           }
         }
