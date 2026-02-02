@@ -17,7 +17,7 @@ export default async function Page({ searchParams }: Props) {
       code: code.split("#_")[0],
     });
     if (user) {
-      return redirect(`/dashboard/${user.name}/integrations`);
+      return redirect(`/integrations`);
     }
   }
 
