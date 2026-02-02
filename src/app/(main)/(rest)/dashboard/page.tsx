@@ -1,5 +1,5 @@
-import React from "react";
+import { DashboardContainer } from "@/features/dashboard/components/dashboard";
 
-export default function page() {
-  return <div>page</div>;
+export default function Dashboard() {
+  return <DashboardContainer>Page</DashboardContainer>;
 }

@@ -145,7 +145,7 @@ export function NavUser() {
     await authClient.signOut({
       fetchOptions: {
         onRequest: () => {
-          router.push("/sign-in");
+          router.push("/login");
         },
       },
     });
