@@ -57,6 +57,7 @@ export async function POST(req: Request) {
         );
 
         if (automation && automation.triggers) {
+          console.log("Direct Message");
           if (
             automation.listeners &&
             automation.listeners.listener === "MESSAGE" &&
@@ -126,16 +127,21 @@ export async function POST(req: Request) {
 
       // accountId !== fromId
 
+      console.log("Comments Message");
+
       if (
         webhook_payload.entry[0].changes &&
         webhook_payload.entry[0].changes[0].field === "comments" &&
         webhook_payload.entry[0].id !==
           webhook_payload.entry[0].changes[0].value.from.id
       ) {
+        console.log("Found Automation", matcher.automationId);
         const automation = await getKeywordAutomation(
           matcher.automationId,
           false,
         );
+
+        console.log("Found Automation2", automation);
 
         const automations_post = await getKeywordPost(
           webhook_payload.entry[0].changes[0].value.media.id,

@@ -7,6 +7,9 @@ export const matchKeyword = async (keyword: string) => {
         equals: keyword,
         mode: "insensitive",
       },
+      automation: {
+        active: true,
+      },
     },
   });
 };
@@ -42,7 +45,7 @@ export const trackResponse = async (
   type: "COMMENT" | "DM",
 ) => {
   const automation = await prisma.automation.findUnique({
-    where: { id: automationId },
+    where: { id: automationId, active: true },
     select: { userId: true },
   });
 
