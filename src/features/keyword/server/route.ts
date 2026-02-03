@@ -38,13 +38,17 @@ export const keywordRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
+        automationId: z.string(),
       }),
     )
     .mutation(async ({ input }) => {
-      return await prisma.keyword.delete({
+      const keyword = await prisma.keyword.delete({
         where: {
           id: input.id,
+          automationId: input.automationId,
         },
       });
+
+      return keyword;
     }),
 });

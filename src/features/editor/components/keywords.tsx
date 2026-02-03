@@ -23,7 +23,6 @@ interface Keyword {
 export function Keywords({ automationId }: Props) {
   const [keyword, setKeyword] = useState("");
   const { data: automation } = useSuspenseAutomation(automationId);
-  const [keywords, setKeywords] = useState<Keyword[]>([]);
   const createKeyword = useCreateKeyword();
   const deleteKeyword = useDeleteKeyword();
 
@@ -35,7 +34,6 @@ export function Keywords({ automationId }: Props) {
       },
       {
         onSuccess: (data) => {
-          setKeywords((prev) => [...prev, data]);
           setKeyword("");
         },
         onSettled(data, error, variables, onMutateResult, context) {
@@ -46,17 +44,11 @@ export function Keywords({ automationId }: Props) {
   };
 
   const handleDeleteKeyword = (id: string) => {
-    setKeywords((prev) => prev.filter((keyword) => keyword.id !== id));
     deleteKeyword.mutate({
       id,
+      automationId,
     });
   };
-
-  useEffect(() => {
-    if (automation?.keywords) {
-      setKeywords(automation.keywords);
-    }
-  }, [automation]);
 
   return (
     <div className="bg-background flex flex-col gap-y-3 p-3 rounded-xl mt-2">
@@ -64,8 +56,9 @@ export function Keywords({ automationId }: Props) {
         Adicione palavras-chave como gatilhos da automação
       </p>
       <div className="flex flex-wrap justify-start gap-2 items-center">
-        {keywords.length > 0 &&
-          keywords.map((keyword) => {
+        {automation?.keywords &&
+          automation.keywords.length > 0 &&
+          automation.keywords.map((keyword) => {
             return (
               <div key={keyword.id}>
                 <div className="flex items-center gap-x-2 bg-muted px-2 py-1 rounded-md">

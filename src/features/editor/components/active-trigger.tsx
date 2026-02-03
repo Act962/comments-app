@@ -2,7 +2,13 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { InstagramIcon, SendIcon, TrashIcon } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { InstagramIcon, PlusIcon, SendIcon, TrashIcon } from "lucide-react";
+import { Keywords } from "./keywords";
 
 interface ActiveTriggerProps {
   type: string;
@@ -44,10 +50,20 @@ export const ActiveTrigger = ({
           ? "Se o comentário contiver as palavras-chave abaixo, a automação será ativada"
           : "Se a mensagem contiver as palavras-chave abaixo, a automação será ativada"}
       </p>
-      <div className="flex gap-2 mt-5 flex-wrap">
+      <div className="flex gap-2 mt-5 flex-wrap items-center">
         {keywords.map((keyword) => (
           <Badge key={keyword.id}>{keyword.word}</Badge>
         ))}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="icon-xs" className="border-dashed">
+              <PlusIcon className="size-3" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-[400px]">
+            <Keywords automationId={automationId} />
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );

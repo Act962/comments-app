@@ -31,10 +31,8 @@ import {
 import Link from "next/link";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
-import { LogoIcon } from "./marketing/logo";
-import { title } from "process";
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,16 +50,25 @@ import { Skeleton } from "./ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useTheme } from "next-themes";
 import { AppLogo } from "./app-logo";
+import { useEffect } from "react";
 
 const menuItems = [
   { title: "Início", url: "/dashboard", icon: HomeIcon },
   { title: "Automações", url: "/workflows", icon: ActivityIcon },
   { title: "Integrações", url: "/integrations", icon: RocketIcon },
-  { title: "Settings", url: "/settings", icon: SettingsIcon },
+  { title: "Configurações", url: "/settings", icon: SettingsIcon },
   { title: "Ajuda", url: "/help", icon: CircleQuestionMarkIcon },
 ];
 
 export function AppSidebar() {
+  const { isMobile, setOpenMobile } = useSidebar();
+  const pathname = usePathname();
+  useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  }, [pathname]);
+
   return (
     <Sidebar variant="floating">
       <SidebarHeader>
@@ -81,7 +88,10 @@ export function AppSidebar() {
                 const Icon = item.icon;
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton
+                      isActive={pathname.startsWith(item.url)}
+                      asChild
+                    >
                       <Link href={item.url}>
                         <Icon />
                         {item.title}
@@ -100,7 +110,10 @@ export function AppSidebar() {
                 const Icon = item.icon;
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton
+                      isActive={pathname.startsWith(item.url)}
+                      asChild
+                    >
                       <Link href={item.url}>
                         <Icon />
                         {item.title}
