@@ -60,33 +60,50 @@ export function PostButton({ automationId }: { automationId: string }) {
         {status === 200 ? (
           <div className="flex flex-col gap-y-3 w-full">
             <div className="flex flex-wrap w-full gap-3">
-              {posts?.map((post) => (
-                <div
-                  className="relative w-4/12 aspect-square rounded-lg cursor-pointer overflow-hidden"
-                  key={post.id}
-                  onClick={() =>
-                    onSelectPost({
-                      postid: post.id,
-                      media: post.media_url,
-                      mediaType: post.media_type,
-                      caption: post.caption,
-                    })
-                  }
-                >
-                  {selectedPost.find((p) => p.postid === post.id) && (
-                    <CheckIcon className="size-5 z-10  absolute top-2 right-2 stroke-4" />
-                  )}
-                  <img
-                    src={post.media_url}
-                    alt={"post image"}
-                    className={cn(
-                      "object-fill size-full hover:opacity-75 transition duration-100",
-                      selectedPost.find((p) => p.postid === post.id) &&
-                        "opacity-50",
+              {posts?.map((post) => {
+                const isSelected = selectedPost.find(
+                  (p) => p.postid === post.id,
+                );
+
+                return (
+                  <div
+                    className="relative w-4/12 aspect-square rounded-lg cursor-pointer overflow-hidden"
+                    key={post.id}
+                    onClick={() =>
+                      onSelectPost({
+                        postid: post.id,
+                        media: post.media_url,
+                        mediaType: post.media_type,
+                        caption: post.caption,
+                      })
+                    }
+                  >
+                    {selectedPost.find((p) => p.postid === post.id) && (
+                      <CheckIcon className="size-5 z-10  absolute top-2 right-2 stroke-4" />
                     )}
-                  />
-                </div>
-              ))}
+                    {post.media_type === "IMAGE" && (
+                      <img
+                        src={post.media_url}
+                        alt={post.caption ?? ""}
+                        className={cn(
+                          "object-fill size-full hover:opacity-75 transition duration-100",
+                          isSelected && "opacity-75",
+                        )}
+                      />
+                    )}
+                    {post.media_type === "VIDEO" && (
+                      <video
+                        src={post.media_url}
+                        muted
+                        className={cn(
+                          "object-fill size-full hover:opacity-75 transition duration-100",
+                          isSelected && "opacity-75",
+                        )}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
             <Button
               onClick={onSavePost}

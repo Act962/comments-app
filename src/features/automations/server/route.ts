@@ -121,7 +121,7 @@ export const automationsRouter = createTRPCRouter({
         ),
       }),
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       await prisma.post.createMany({
         data: input.posts.map((post) => ({
           ...post,
@@ -132,6 +132,19 @@ export const automationsRouter = createTRPCRouter({
       return {
         automationId: input.automationId,
       };
+    }),
+  deletePost: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      return await prisma.post.delete({
+        where: {
+          id: input.id,
+        },
+      });
     }),
   updateIntegrationToken: protectedProcedure
     .input(

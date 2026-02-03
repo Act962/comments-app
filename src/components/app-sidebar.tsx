@@ -7,9 +7,13 @@ import {
   CircleQuestionMarkIcon,
   Home,
   HomeIcon,
+  LaptopIcon,
   LogOutIcon,
+  MoonIcon,
+  PaletteIcon,
   RocketIcon,
   SettingsIcon,
+  SunIcon,
   UserIcon,
 } from "lucide-react";
 import {
@@ -37,11 +41,16 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPortal,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Skeleton } from "./ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { useTheme } from "next-themes";
 
 const menuItems = [
   { title: "Início", url: "/dashboard", icon: HomeIcon },
@@ -130,6 +139,7 @@ export function NavUser() {
   const { isMobile } = useSidebar();
   const { data: session, isPending } = authClient.useSession();
   const router = useRouter();
+  const { setTheme } = useTheme();
 
   function getInitials(name: string): string {
     const initials = name
@@ -238,6 +248,38 @@ export function NavUser() {
                   Configurações
                 </Link>
               </DropdownMenuItem>
+
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer">
+                  <PaletteIcon />
+                  Tema
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => setTheme("light")}
+                    >
+                      <SunIcon />
+                      Claro
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => setTheme("dark")}
+                    >
+                      <MoonIcon />
+                      Escuro
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => setTheme("system")}
+                    >
+                      <LaptopIcon />
+                      Sistema
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
 
               <DropdownMenuItem className="cursor-pointer" asChild>
                 <Link href={"/settings?tab=notifications"}>

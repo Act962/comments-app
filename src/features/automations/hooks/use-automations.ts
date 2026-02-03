@@ -142,3 +142,24 @@ export const useSavePost = () => {
     }),
   );
 };
+
+export const useDeletePost = () => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    trpc.automations.deletePost.mutationOptions({
+      onSuccess: (data) => {
+        toast.success("Post deletado com sucesso");
+        queryClient.invalidateQueries(
+          trpc.automations.getOne.queryOptions({
+            id: data.automationId ?? "",
+          }),
+        );
+      },
+      onError: () => {
+        toast.error("Erro ao deletar post");
+      },
+    }),
+  );
+};

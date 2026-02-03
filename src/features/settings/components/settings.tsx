@@ -5,7 +5,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
-  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -26,19 +25,15 @@ import {
 } from "@/components/ui/item";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  useQueryNotifications,
-  useSuspenseNotifications,
-} from "@/features/notifications/hooks/use-notification";
+import { useQueryNotifications } from "@/features/notifications/hooks/use-notification";
 import { useUpdateProfile } from "@/features/user/hooks/use-user";
 import { authClient } from "@/lib/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BellIcon, CheckIcon } from "lucide-react";
 import Link from "next/link";
 import { useQueryState } from "nuqs";
-import { Suspense, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { z } from "zod";
 
 const profileSchema = z.object({
