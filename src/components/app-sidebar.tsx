@@ -51,6 +51,7 @@ import {
 import { Skeleton } from "./ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useTheme } from "next-themes";
+import { AppLogo } from "./app-logo";
 
 const menuItems = [
   { title: "Início", url: "/dashboard", icon: HomeIcon },
@@ -66,9 +67,8 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton>
-              <LogoIcon />
-              <span>Comments</span>
+            <SidebarMenuButton className="h-16">
+              <AppLogo />
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
