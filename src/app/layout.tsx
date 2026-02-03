@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Comments App",
     description: "Automative seu Instagram de forma inteligente",
-    url: "https://comments.nasaex.com/logo.png",
+    url: "https://comments.nasaex.com",
     type: "website",
     locale: "pt-BR",
     siteName: "Comments App",
