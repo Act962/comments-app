@@ -36,14 +36,6 @@ export const ActiveTrigger = ({
             ? "Quando alguém comenta em um de meus posts"
             : "Quando alguém me envia mensagem no direct"}
         </p>
-
-        {/* <Button
-          className="ml-auto opacity-0 group-hover:opacity-100"
-          variant="ghost"
-          size="icon"
-        >
-          <TrashIcon />
-        </Button> */}
       </div>
       <p className="text-muted-foreground">
         {type === "COMMENT"
