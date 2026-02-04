@@ -33,6 +33,13 @@ export const auth = betterAuth({
       subscription: {
         enabled: true,
         plans: PLANS,
+        getCheckoutSessionParams: async () => {
+          return {
+            params: {
+              allow_promotion_codes: true,
+            },
+          };
+        },
       },
     }),
   ],
