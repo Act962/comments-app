@@ -1,5 +1,5 @@
-import stripe from "stripe";
+import Stripe from "stripe";
 
-export const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!, {
+export const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-12-15.clover",
 });

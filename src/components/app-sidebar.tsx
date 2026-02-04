@@ -51,6 +51,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useTheme } from "next-themes";
 import { AppLogo } from "./app-logo";
 import { useEffect } from "react";
+import {
+  useCurrentSubscription,
+  useUpgradeSubscription,
+} from "@/features/subscription/hook/use-subscription";
 
 const menuItems = [
   { title: "Início", url: "/dashboard", icon: HomeIcon },
@@ -135,6 +139,24 @@ export function AppSidebar() {
 }
 
 function UpgradeCard() {
+  const upgradeSubscription = useUpgradeSubscription();
+  const { subscription, isLoading } = useCurrentSubscription();
+
+  const onUpgrade = () => {
+    upgradeSubscription.mutate({
+      plan: "pro",
+      callbackUrl: `${window.location.origin}/settings`,
+    });
+  };
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (subscription?.plan.name === "pro") {
+    return null;
+  }
+
   return (
     <Card>
       <CardContent>
@@ -142,7 +164,9 @@ function UpgradeCard() {
         <p className="text-sm text-muted-foreground mt-1">
           Desbloqueie todas as funcionalidades do seu plano Pro
         </p>
-        <Button className="mt-2 w-full">Assinar</Button>
+        <Button className="mt-2 w-full" onClick={onUpgrade}>
+          Assinar
+        </Button>
       </CardContent>
     </Card>
   );

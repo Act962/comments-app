@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -8,20 +9,22 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  automations   Automation[]
-  integrations  Integration[]
-  history       History[]
-  notifications Notification[]
+  id                     String                  @id @default(cuid())
+  name                   String
+  email                  String
+  emailVerified          Boolean                 @default(false)
+  image                  String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  sessions               Session[]
+  accounts               Account[]
+  automations            Automation[]
+  integrations           Integration[]
+  history                History[]
+  notifications          Notification[]
   notificationPreference NotificationPreference?
+
+  stripeCustomerId String?
 
   @@unique([email])
   @@map("user")
@@ -76,121 +79,113 @@ model Verification {
 }
 
 model Integration {
-  id String @id @default(cuid())
-  name INTEGRATIONS @default(INSTAGRAM)
-  token String @unique
-  instagramId String? @unique
-  expiresAt DateTime?
-  createdAt DateTime @default(now())
+  id          String       @id @default(cuid())
+  name        INTEGRATIONS @default(INSTAGRAM)
+  token       String       @unique
+  instagramId String?      @unique
+  expiresAt   DateTime?
+  createdAt   DateTime     @default(now())
 
   userId String?
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("integration")
 }
 
-
 model Automation {
-  id  String @id @default(cuid())
-  name String @default("Sem título")
+  id        String   @id @default(cuid())
+  name      String   @default("Sem título")
   createdAt DateTime @default(now())
-  active Boolean @default(false)
+  active    Boolean  @default(false)
 
   userId String
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade) // Talvez seja opcional
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade) // Talvez seja opcional
 
-  dms Dms[]
-  posts Post[]
+  dms       Dms[]
+  posts     Post[]
   listeners Listerner?
-  triggers Trigger[]
-  keywords Keyword[]
+  triggers  Trigger[]
+  keywords  Keyword[]
 
   @@map("automation")
 }
 
 model Dms {
-  id String @id @default(cuid())
-  senderId String?
-  recieverId String?
-  message String?
-  createdAt DateTime @default(now())
+  id           String      @id @default(cuid())
+  senderId     String?
+  recieverId   String?
+  message      String?
+  createdAt    DateTime    @default(now())
   automationId String?
-  automation Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  automation   Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
 }
 
 model Post {
-  id String @id @default(cuid())
-  postId String
-  caption String?
-  media String
-  mediaType MEDIA_TYPE @default(IMAGE)
+  id           String      @id @default(cuid())
+  postId       String
+  caption      String?
+  media        String
+  mediaType    MEDIA_TYPE  @default(IMAGE)
   automationId String?
-  automation Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  automation   Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
 }
 
 model Listerner {
-  id String @id @default(cuid())
-  automationId String? @unique
-  automation Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
-  listener LISTENERS @default(MESSAGE)
-  prompt String
+  id           String      @id @default(cuid())
+  automationId String?     @unique
+  automation   Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  listener     LISTENERS   @default(MESSAGE)
+  prompt       String
   commentReply String?
-  dmCount Int @default(0)
-  commentCount Int @default(0)
+  dmCount      Int         @default(0)
+  commentCount Int         @default(0)
 }
 
 model Trigger {
-  id String @id @default(cuid())
-  type String
+  id           String      @id @default(cuid())
+  type         String
   automationId String?
-  automation Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  automation   Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
 }
 
 model Keyword {
-  id String @id @default(cuid())
-  word String
+  id           String      @id @default(cuid())
+  word         String
   automationId String?
-  automation Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  automation   Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
 
   @@unique([automationId, word])
 }
 
-
 model History {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type         String   // "DM" or "COMMENT"
-  count        Int      @default(0)
-  date         DateTime @default(now())
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type   String // "DM" or "COMMENT"
+  count  Int      @default(0)
+  date   DateTime @default(now())
 
   @@index([userId, date])
   @@map("history")
 }
 
 model Notification {
-  id        String   @id @default(cuid())
+  id        String            @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      NOTIFICATION_TYPE
   title     String
   message   String
-  
   // Dados contextuais (JSON flexível para diferentes tipos de notificação)
   metadata  Json?
-  
   // Link para onde a notificação deve redirecionar
   link      String?
-  
   // Status
-  read      Boolean  @default(false)
+  read      Boolean           @default(false)
   readAt    DateTime?
-  
   // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
   // Índices para performance
   @@index([userId, read])
   @@index([userId, createdAt])
@@ -198,29 +193,28 @@ model Notification {
 }
 
 // Preferências de notificação do usuário
+
 model NotificationPreference {
-  id     String  @id @default(cuid())
-  userId String  @unique
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   // Canais
-  emailEnabled    Boolean @default(true)
-  pushEnabled     Boolean @default(true)
-  inAppEnabled    Boolean @default(true)
-  
+  emailEnabled     Boolean  @default(true)
+  pushEnabled      Boolean  @default(true)
+  inAppEnabled     Boolean  @default(true)
   // Tipos de notificação
-  automationAlerts Boolean @default(true)
-  dmAlerts         Boolean @default(true)
-  commentAlerts    Boolean @default(true)
-  systemAlerts     Boolean @default(true)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
+  automationAlerts Boolean  @default(true)
+  dmAlerts         Boolean  @default(true)
+  commentAlerts    Boolean  @default(true)
+  systemAlerts     Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
   @@map("notification_preference")
 }
 
 // Enums
+
 enum INTEGRATIONS {
   INSTAGRAM
 }
@@ -237,14 +231,40 @@ enum LISTENERS {
 }
 
 // Enum para tipos de notificação
+
 enum NOTIFICATION_TYPE {
-  AUTOMATION_SUCCESS    // Automação executada com sucesso
-  AUTOMATION_ERROR      // Erro na automação
-  NEW_DM                // Nova mensagem recebida
-  NEW_COMMENT           // Novo comentário
-  INTEGRATION_EXPIRED   // Integração expirou
-  INTEGRATION_ERROR     // Erro na integração
-  KEYWORD_TRIGGERED     // Palavra-chave foi acionada
-  DAILY_REPORT          // Relatório diário
-  SYSTEM                // Notificação do sistema
+  AUTOMATION_SUCCESS // Automação executada com sucesso
+  AUTOMATION_ERROR // Erro na automação
+  NEW_DM // Nova mensagem recebida
+  NEW_COMMENT // Novo comentário
+  INTEGRATION_EXPIRED // Integração expirou
+  INTEGRATION_ERROR // Erro na integração
+  KEYWORD_TRIGGERED // Palavra-chave foi acionada
+  DAILY_REPORT // Relatório diário
+  SYSTEM // Notificação do sistema
+}
+
+enum Plan {
+  free
+  pro
+}
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  plan                 Plan
+  referenceId          String
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  status               String?   @default("incomplete")
+  periodStart          DateTime?
+  periodEnd            DateTime?
+  trialStart           DateTime?
+  trialEnd             DateTime?
+  cancelAtPeriodEnd    Boolean?  @default(false)
+  cancelAt             DateTime?
+  canceledAt           DateTime?
+  endedAt              DateTime?
+  seats                Int?
+
+  @@map("subscription")
 }

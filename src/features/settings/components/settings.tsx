@@ -26,6 +26,10 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQueryNotifications } from "@/features/notifications/hooks/use-notification";
+import {
+  useCurrentSubscription,
+  useUpgradeSubscription,
+} from "@/features/subscription/hook/use-subscription";
 import { useUpdateProfile } from "@/features/user/hooks/use-user";
 import { authClient } from "@/lib/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -111,37 +115,22 @@ export const ProfileTab = () => {
 };
 
 export const PlanTab = () => {
+  const { subscription, isLoading } = useCurrentSubscription();
+  const upgradeSubscription = useUpgradeSubscription();
+
+  const onUpgrade = () => {
+    upgradeSubscription.mutate({
+      plan: "pro",
+      callbackUrl: `${window.location.origin}/settings`,
+    });
+  };
+
+  const portalLink = process.env.NEXT_PUBLIC_STRIPE_PORTAL_LINK;
+
+  console.log(portalLink);
+
   return (
     <div className="mt-8 grid gap-6 md:mt-20 md:grid-cols-5 md:gap-0">
-      <div className="rounded-lg flex flex-col justify-between space-y-8 border p-6 md:col-span-2 md:my-2 md:rounded-r-none md:border-r-0 lg:p-10">
-        <div className="space-y-4">
-          <div>
-            <h2 className="font-medium">Free</h2>
-            <span className="my-3 block text-2xl font-semibold">$0 / mo</span>
-            <p className="text-muted-foreground text-sm">Per editor</p>
-          </div>
-
-          <Button asChild variant="outline" className="w-full">
-            <Link href="">Get Started</Link>
-          </Button>
-
-          <hr className="border-dashed" />
-
-          <ul className="list-outside space-y-3 text-sm">
-            {[
-              "Basic Analytics Dashboard",
-              "5GB Cloud Storage",
-              "Email and Chat Support",
-            ].map((item, index) => (
-              <li key={index} className="flex items-center gap-2">
-                <CheckIcon className="size-3" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
       <div className="dark:bg-muted rounded-lg border p-6 shadow-lg shadow-gray-950/5 md:col-span-3 lg:p-10 dark:[--color-muted:var(--color-zinc-900)]">
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-4">
@@ -153,9 +142,17 @@ export const PlanTab = () => {
               <p className="text-muted-foreground text-sm">Per editor</p>
             </div>
 
-            <Button asChild className="w-full">
-              <Link href="">Get Started</Link>
-            </Button>
+            {subscription?.subscription ? (
+              <Button variant="outline" asChild className="w-full">
+                <Link href={portalLink ?? ""} target="_blank">
+                  Gerenciar
+                </Link>
+              </Button>
+            ) : (
+              <Button className="w-full" onClick={onUpgrade}>
+                Assinar
+              </Button>
+            )}
           </div>
 
           <div>
