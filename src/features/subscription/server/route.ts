@@ -49,6 +49,38 @@ export const subscriptionRouter = createTRPCRouter({
       };
     }),
 
+  billingPortal: protectedProcedure
+    .input(z.object({ callbackUrl: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const existingSubscription = await prisma.subscription.findFirst({
+        where: {
+          referenceId: ctx.auth.user.id,
+          status: "active",
+        },
+      });
+
+      if (!existingSubscription) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Subscription not found",
+        });
+      }
+
+      const data = await auth.api.createBillingPortal({
+        body: {
+          referenceId: existingSubscription.referenceId,
+          returnUrl: input.callbackUrl,
+          disableRedirect: true,
+        },
+        headers: await headers(),
+      });
+
+      return {
+        success: true,
+        checkoutUrl: data.url,
+      };
+    }),
+
   currentSubscription: protectedProcedure.query(async ({ ctx }) => {
     const subscription = await prisma.subscription.findFirst({
       where: {

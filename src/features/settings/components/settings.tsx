@@ -27,6 +27,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQueryNotifications } from "@/features/notifications/hooks/use-notification";
 import {
+  useBillingPortal,
   useCurrentSubscription,
   useUpgradeSubscription,
 } from "@/features/subscription/hook/use-subscription";
@@ -117,6 +118,7 @@ export const ProfileTab = () => {
 export const PlanTab = () => {
   const { subscription, isLoading } = useCurrentSubscription();
   const upgradeSubscription = useUpgradeSubscription();
+  const billingPortal = useBillingPortal();
 
   const onUpgrade = () => {
     upgradeSubscription.mutate({
@@ -125,9 +127,13 @@ export const PlanTab = () => {
     });
   };
 
-  const portalLink = process.env.NEXT_PUBLIC_STRIPE_PORTAL_LINK;
+  const onBillingPortal = () => {
+    billingPortal.mutate({
+      callbackUrl: `${window.location.origin}/settings`,
+    });
+  };
 
-  console.log(portalLink);
+  const portalLink = process.env.NEXT_PUBLIC_STRIPE_PORTAL_LINK;
 
   return (
     <div className="mt-8 grid gap-6 md:mt-20 md:grid-cols-5 md:gap-0">
@@ -137,16 +143,18 @@ export const PlanTab = () => {
             <div>
               <h2 className="font-medium">Pro</h2>
               <span className="my-3 block text-2xl font-semibold">
-                $19 / mo
+                R$ 79,90 / mo
               </span>
               <p className="text-muted-foreground text-sm">Per editor</p>
             </div>
 
-            {subscription?.subscription ? (
-              <Button variant="outline" asChild className="w-full">
-                <Link href={portalLink ?? ""} target="_blank">
-                  Gerenciar
-                </Link>
+            {subscription?.subscription.plan === "pro" ? (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={onBillingPortal}
+              >
+                Gerenciar
               </Button>
             ) : (
               <Button className="w-full" onClick={onUpgrade}>

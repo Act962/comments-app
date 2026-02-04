@@ -30,3 +30,20 @@ export const useCurrentSubscription = () => {
     isLoading: isPending,
   };
 };
+
+export const useBillingPortal = () => {
+  const trpc = useTRPC();
+
+  return useMutation(
+    trpc.subscription.billingPortal.mutationOptions({
+      onSuccess: (data) => {
+        if (data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+        }
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    }),
+  );
+};
