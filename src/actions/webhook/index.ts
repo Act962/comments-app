@@ -1,6 +1,6 @@
 import prisma from "@/lib/db";
 
-export const matchKeyword = async (keyword: string) => {
+export const matchKeyword = async (keyword: string, accountId: string) => {
   return await prisma.keyword.findFirst({
     where: {
       word: {
@@ -9,6 +9,9 @@ export const matchKeyword = async (keyword: string) => {
       },
       automation: {
         active: true,
+        user: {
+          id: accountId,
+        },
       },
     },
   });
@@ -114,5 +117,16 @@ export const getKeywordPost = async (postId: string, automationId: string) => {
       AND: [{ postId: postId }, { automationId }],
     },
     select: { automation: true },
+  });
+};
+
+export const getIntegration = async (accountId: string) => {
+  return await prisma.integration.findUnique({
+    where: {
+      instagramId: accountId,
+    },
+    select: {
+      userId: true,
+    },
   });
 };

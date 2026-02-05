@@ -4,6 +4,8 @@ import {
   matchKeyword,
   trackResponse,
 } from "@/actions/webhook";
+import { parseWebhook } from "@/features/webhook/parser";
+import { routeEvent } from "@/features/webhook/router";
 import { sendCommentReply, sendDM, sendPrivateMessage } from "@/lib/fetch";
 import { openaiClient } from "@/lib/openai";
 import { NextResponse } from "next/server";
@@ -29,218 +31,36 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const webhook_payload = await req.json();
-
-  console.dir(webhook_payload, { depth: null });
-
-  let matcher;
   try {
-    if (webhook_payload.entry[0].messaging) {
-      matcher = await matchKeyword(
-        webhook_payload.entry[0].messaging[0].message.text,
-      );
-    }
+    const payload = await req.json();
 
-    if (webhook_payload.entry[0].changes) {
-      matcher = await matchKeyword(
-        webhook_payload.entry[0].changes[0].value.text,
-      );
-    }
+    console.log("Payload");
 
-    if (matcher && matcher.automationId) {
-      // We have a keyword matcher
-      console.log("Matcher found", matcher);
-      if (webhook_payload.entry[0].messaging) {
-        const automation = await getKeywordAutomation(
-          matcher.automationId,
-          true,
-        );
+    console.dir(payload, { depth: null });
 
-        if (automation && automation.triggers) {
-          console.log("Direct Message");
-          if (
-            automation.listeners &&
-            automation.listeners.listener === "MESSAGE" &&
-            webhook_payload.entry[0].messaging[0].sender.id !==
-              webhook_payload.entry[0].messaging[0].recipient.id
-          ) {
-            const direct_message = await sendDM(
-              webhook_payload.entry[0].id,
-              webhook_payload.entry[0].messaging[0].sender.id,
-              automation.listeners.prompt,
-              automation.user.integrations[0].token,
-            );
+    const events = parseWebhook(payload);
 
-            if (direct_message.status === 200) {
-              const tracked = await trackResponse(automation.id, "DM");
-              if (tracked) {
-                return NextResponse.json(
-                  {
-                    message: "Message sent",
-                  },
-                  {
-                    status: 200,
-                  },
-                );
-              }
-            }
-          }
+    console.log("Event");
 
-          // Verificar se o usuário tem algum plano
-          if (
-            automation.listeners &&
-            automation.listeners.listener === "SMARTAI" &&
-            webhook_payload.entry[0].messaging[0].sender.id !==
-              webhook_payload.entry[0].messaging[0].recipient.id
-          ) {
-            // Implementar a inteligência artificial - automation.listeners.prompt
-            const response = await openaiClient.responses.create({
-              model: "gpt-4o-mini",
-              input: `${automation.listeners.prompt}: Mantenha as respostas com menos de 2 frases. Responda apenas com o texto da resposta, sem formatação ou tags adicionais. `,
-            });
+    console.dir(events, { depth: null });
 
-            if (response.output_text) {
-              const direct_message = await sendDM(
-                webhook_payload.entry[0].id,
-                webhook_payload.entry[0].messaging[0].sender.id,
-                response.output_text,
-                automation.user.integrations[0].token,
-              );
-
-              if (direct_message.status === 200) {
-                const tracked = await trackResponse(automation.id, "DM");
-                if (tracked) {
-                  return NextResponse.json(
-                    {
-                      message: "Message sent",
-                    },
-                    {
-                      status: 200,
-                    },
-                  );
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // accountId !== fromId
-
-      console.log("Comments Message");
-
-      if (
-        webhook_payload.entry[0].changes &&
-        webhook_payload.entry[0].changes[0].field === "comments" &&
-        webhook_payload.entry[0].id !==
-          webhook_payload.entry[0].changes[0].value.from.id
-      ) {
-        console.log("Found Automation", matcher.automationId);
-        const automation = await getKeywordAutomation(
-          matcher.automationId,
-          false,
-        );
-
-        console.log("Found Automation2", automation);
-
-        const automations_post = await getKeywordPost(
-          webhook_payload.entry[0].changes[0].value.media.id,
-          matcher.automationId,
-        );
-
-        if (automation && automations_post && automation.triggers) {
-          if (automation.listeners) {
-            if (automation.listeners.listener === "MESSAGE") {
-              console.log("Private message listener");
-              const direct_message = await sendPrivateMessage(
-                webhook_payload.entry[0].id,
-                webhook_payload.entry[0].changes[0].value.id,
-                automation.listeners.prompt,
-                automation.user.integrations[0].token,
-              );
-
-              if (automation.listeners.commentReply) {
-                await sendCommentReply(
-                  webhook_payload.entry[0].changes[0].value.id,
-                  automation.listeners.commentReply,
-                  automation.user.integrations[0].token,
-                );
-              }
-
-              if (direct_message.status === 200) {
-                const tracked = await trackResponse(automation.id, "COMMENT");
-
-                if (tracked) {
-                  return NextResponse.json(
-                    {
-                      message: "Message sent",
-                    },
-                    {
-                      status: 200,
-                    },
-                  );
-                }
-              }
-            }
-
-            // Adicionar plano
-            if (automation.listeners.listener === "SMARTAI") {
-              const response = await openaiClient.responses.create({
-                model: "gpt-4o-mini",
-                input: `${automation.listeners.prompt}: Mantenha as respostas com menos de 2 frases. Responda apenas com o texto da resposta, sem formatação ou tags adicionais.`,
-              });
-
-              if (response.output_text) {
-                const direct_message = await sendPrivateMessage(
-                  webhook_payload.entry[0].id,
-                  webhook_payload.entry[0].changes[0].value.id,
-                  response.output_text,
-                  automation.user.integrations[0].token,
-                );
-
-                if (direct_message.status === 200) {
-                  await trackResponse(automation.id, "COMMENT");
-                }
-
-                if (automation.listeners.commentReply) {
-                  await sendCommentReply(
-                    webhook_payload.entry[0].changes[0].value.id,
-                    automation.listeners.commentReply,
-                    automation.user.integrations[0].token,
-                  );
-                }
-
-                return NextResponse.json(
-                  {
-                    message: "Message sent",
-                  },
-                  {
-                    status: 200,
-                  },
-                );
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if (!matcher) {
-      // Verificar se o usuário tem algum plano
+    for (const event of events) {
+      await routeEvent(event);
     }
 
     return NextResponse.json(
       {
-        message: "No automation set",
+        message: "Success",
       },
       {
-        status: 404,
+        status: 200,
       },
     );
   } catch (error) {
+    console.log(error);
     return NextResponse.json(
       {
-        message: "No automation set",
+        message: "Error",
       },
       {
         status: 500,

@@ -136,7 +136,7 @@ export const userRouter = createTRPCRouter({
 
         if (token) {
           const get_insta_id = await fetch(
-            `${process.env.INSTAGRAM_BASE_URL}/me?fields=id&access_token=${token}`,
+            `${process.env.INSTAGRAM_BASE_URL}/me?fields=user_id&access_token=${token}`,
           );
 
           const instaId = await get_insta_id.json();
@@ -152,7 +152,7 @@ export const userRouter = createTRPCRouter({
                 create: {
                   token,
                   expiresAt: new Date(expire_date),
-                  instagramId: instaId.id,
+                  instagramId: instaId.user_id,
                 },
               },
             },
