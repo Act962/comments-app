@@ -346,17 +346,17 @@ export default function PrivacyPolicyPage() {
               </p>
               <div className="flex flex-col gap-4 items-center">
                 <a
-                  href="mailto:contato@actdigital.com.br"
+                  href="mailto:suportetecniconasa@gmail.com"
                   className="text-xl font-bold text-primary hover:underline underline-offset-8 transition-all"
                 >
-                  contato@actdigital.com.br
+                  suportetecniconasa@gmail.com
                 </a>
                 <div className="text-xs text-muted-foreground space-y-1">
                   <p>
                     <strong>Empresa:</strong> ACT Digital
                   </p>
                   <p>
-                    <strong>Site:</strong> comments-app-fawn.vercel.app
+                    <strong>Site:</strong> comments.nasaex.com
                   </p>
                 </div>
               </div>
