@@ -2,7 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { CheckIcon, PlusIcon } from "lucide-react";
-import { useQueryPosts } from "@/features/user/hooks/use-user";
+import {
+  useInfinitePosts,
+  useQueryPosts,
+} from "@/features/user/hooks/use-user";
 import { useSavePost } from "@/features/automations/hooks/use-automations";
 import {
   Popover,
@@ -13,6 +16,8 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { Spinner } from "@/components/ui/spinner";
+import { useTRPC } from "@/trpc/client";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Post {
   postid: string;
@@ -22,8 +27,10 @@ interface Post {
 }
 
 export function PostButton({ automationId }: { automationId: string }) {
-  const { posts, status } = useQueryPosts();
+  // const { posts, status } = useQueryPosts();
   const [selectedPost, setSelectedPost] = useState<Post[]>([]);
+  const { posts, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useInfinitePosts();
   const savePost = useSavePost();
 
   const onSelectPost = (post: Post) => {
@@ -57,68 +64,84 @@ export function PostButton({ automationId }: { automationId: string }) {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[400px]">
-        {status === 200 ? (
-          <div className="flex flex-col gap-y-3 w-full">
-            <div className="flex flex-wrap w-full gap-3">
-              {posts?.map((post) => {
-                const isSelected = selectedPost.find(
-                  (p) => p.postid === post.id,
-                );
+        <div className="flex flex-col gap-y-3 w-full">
+          <ScrollArea className="h-[300px] overflow-hidden">
+            <div className="w-full">
+              <div className="flex flex-wrap w-full gap-3">
+                {posts.length > 0 ? (
+                  posts.map((post) => {
+                    const isSelected = selectedPost.find(
+                      (p) => p.postid === post.id,
+                    );
 
-                return (
-                  <div
-                    className="relative w-4/12 aspect-square rounded-lg cursor-pointer overflow-hidden"
-                    key={post.id}
-                    onClick={() =>
-                      onSelectPost({
-                        postid: post.id,
-                        media: post.media_url,
-                        mediaType: post.media_type,
-                        caption: post.caption,
-                      })
-                    }
-                  >
-                    {selectedPost.find((p) => p.postid === post.id) && (
-                      <CheckIcon className="size-5 z-10  absolute top-2 right-2 stroke-4" />
-                    )}
-                    {post.media_type === "IMAGE" && (
-                      <img
-                        src={post.media_url}
-                        alt={post.caption ?? ""}
-                        className={cn(
-                          "object-fill size-full hover:opacity-75 transition duration-100",
-                          isSelected && "opacity-75",
+                    return (
+                      <div
+                        key={post.id}
+                        className="relative w-1/3 aspect-square rounded-lg cursor-pointer overflow-hidden"
+                        onClick={() =>
+                          onSelectPost({
+                            postid: post.id,
+                            media: post.media_url,
+                            mediaType: post.media_type,
+                            caption: post.caption,
+                          })
+                        }
+                      >
+                        {isSelected && (
+                          <CheckIcon className="size-5 z-10 absolute top-2 right-2 stroke-4" />
                         )}
-                      />
-                    )}
-                    {post.media_type === "VIDEO" && (
-                      <video
-                        src={post.media_url}
-                        muted
-                        className={cn(
-                          "object-fill size-full hover:opacity-75 transition duration-100",
-                          isSelected && "opacity-75",
+
+                        {post.media_type === "IMAGE" && (
+                          <img
+                            src={post.media_url}
+                            alt={post.caption ?? ""}
+                            className={cn(
+                              "object-fill size-full transition",
+                              isSelected && "opacity-75",
+                            )}
+                          />
                         )}
-                      />
-                    )}
-                  </div>
-                );
-              })}
+
+                        {post.media_type === "VIDEO" && (
+                          <video
+                            src={post.media_url}
+                            muted
+                            className={cn(
+                              "object-fill size-full transition",
+                              isSelected && "opacity-75",
+                            )}
+                          />
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-center text-muted-foreground">
+                    Nenhum post encontrado
+                  </p>
+                )}
+              </div>
+
+              {hasNextPage && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full mt-4"
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                >
+                  {isFetchingNextPage && <Spinner />}
+                  Mais Posts
+                </Button>
+              )}
             </div>
-            <Button
-              onClick={onSavePost}
-              disabled={isDisabled}
-              className="w-full"
-            >
-              {savePost.isPending && <Spinner />}
-              Salvar
-            </Button>
-          </div>
-        ) : (
-          <p className="text-center text-muted-foreground">
-            Nenhum post encontrado
-          </p>
-        )}
+          </ScrollArea>
+
+          <Button onClick={onSavePost} disabled={isDisabled} className="w-full">
+            {savePost.isPending && <Spinner />}
+            Salvar
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   );

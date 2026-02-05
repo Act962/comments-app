@@ -177,10 +177,17 @@ export const EditorActiveToggle = ({ workflowId }: { workflowId: string }) => {
 
   const handleToggleActive = (checked: boolean) => {
     setActive(checked);
-    updateAutomation.mutate({
-      id: workflowId,
-      active: checked,
-    });
+    updateAutomation.mutate(
+      {
+        id: workflowId,
+        active: checked,
+      },
+      {
+        onError: () => {
+          setActive(false);
+        },
+      },
+    );
   };
 
   useEffect(() => {

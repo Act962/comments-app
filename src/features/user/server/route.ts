@@ -76,32 +76,41 @@ export const userRouter = createTRPCRouter({
 
     return user;
   }),
-  getPosts: protectedProcedure.query(async ({ ctx }) => {
-    const user = await prisma.user.findUnique({
-      where: {
-        id: ctx.auth.user.id,
-      },
-      include: {
-        integrations: true,
-        automations: true,
-      },
-    });
+  getPosts: protectedProcedure
+    .input(
+      z.object({
+        cursor: z.string().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const user = await prisma.user.findUnique({
+        where: {
+          id: ctx.auth.user.id,
+        },
+        include: {
+          integrations: true,
+          automations: true,
+        },
+      });
 
-    const instagram = user?.integrations.find(
-      (integration) => integration.name === "INSTAGRAM",
-    );
+      const instagram = user?.integrations.find(
+        (integration) => integration.name === "INSTAGRAM",
+      );
 
-    const posts = await fetch(
-      `${process.env.INSTAGRAM_BASE_URL}/me/media?fields=id,caption,media_url,media_type,timestamp&limit=10&access_token=${instagram?.token}`,
-    );
+      const url =
+        input.cursor ||
+        `${process.env.INSTAGRAM_BASE_URL}/me/media?fields=id,caption,media_url,media_type,timestamp&limit=10&access_token=${instagram?.token}`;
 
-    const parsed = await posts.json();
+      const posts = await fetch(url);
 
-    return {
-      data: parsed.data as InstagramPostProps[],
-      status: posts.status,
-    };
-  }),
+      const parsed = await posts.json();
+
+      return {
+        items: parsed.data as InstagramPostProps[],
+        nextCursor: parsed.paging?.next ?? undefined,
+        status: posts.status,
+      };
+    }),
   onIntegration: protectedProcedure
     .input(
       z.object({

@@ -116,11 +116,11 @@ export const PostView = ({ open, onOpenChange, post }: PostViewProps) => {
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full min-w-auto sm:min-w-3xl">
+      <DialogContent className="w-full min-w-auto ">
         <DialogHeader>
           <DialogTitle className="sr-only">Post</DialogTitle>
         </DialogHeader>
-        <div className="w-full aspect-square">
+        <div className=" aspect-square rounded-lg overflow-hidden mx-auto">
           {post.mediaType === "IMAGE" && (
             <img
               src={post.media}

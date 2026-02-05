@@ -54,8 +54,8 @@ export const ProfileTab = () => {
   const form = useForm<ProfileSchema>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: "",
-      email: "",
+      name: session?.user.name ?? "",
+      email: session?.user.email ?? "",
     },
   });
 
@@ -133,7 +133,7 @@ export const PlanTab = () => {
     });
   };
 
-  const portalLink = process.env.NEXT_PUBLIC_STRIPE_PORTAL_LINK;
+  // const portalLink = process.env.NEXT_PUBLIC_STRIPE_PORTAL_LINK;
 
   return (
     <div className="mt-8 grid gap-6 md:mt-20 md:grid-cols-5 md:gap-0">
@@ -163,7 +163,7 @@ export const PlanTab = () => {
             )}
           </div>
 
-          <div>
+          {/* <div>
             <div className="text-sm font-medium">Everything in free plus :</div>
 
             <ul className="mt-4 list-outside space-y-3 text-sm">
@@ -185,7 +185,7 @@ export const PlanTab = () => {
                 </li>
               ))}
             </ul>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

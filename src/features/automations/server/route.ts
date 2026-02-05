@@ -88,13 +88,16 @@ export const automationsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const automation = await prisma.automation.update({
+      const automation = await prisma.automation.findUnique({
         where: {
           id: input.id,
           userId: ctx.auth.user.id,
         },
-        data: {
-          active: input.active,
+        include: {
+          keywords: true,
+          listeners: true,
+          triggers: true,
+          posts: true,
         },
       });
 
@@ -105,7 +108,39 @@ export const automationsRouter = createTRPCRouter({
         });
       }
 
-      return automation;
+      if (automation.keywords.length === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Adicione uma palavra-chave",
+        });
+      }
+
+      const typeAutomation = automation.triggers[0].type as "DM" | "COMMENT";
+
+      if (typeAutomation === "COMMENT" && !automation.listeners?.listener) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Adicione um função ao seu post",
+        });
+      }
+
+      if (typeAutomation === "COMMENT" && automation.posts.length === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Adicione um post",
+        });
+      }
+
+      const updateAutomation = await prisma.automation.update({
+        where: {
+          id: input.id,
+        },
+        data: {
+          active: input.active,
+        },
+      });
+
+      return updateAutomation;
     }),
   savePost: protectedProcedure
     .input(
@@ -140,6 +175,33 @@ export const automationsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
+      const post = await prisma.post.findUnique({
+        where: {
+          id: input.id,
+        },
+        include: {
+          automation: {
+            include: {
+              posts: true,
+            },
+          },
+        },
+      });
+
+      if (!post) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Post não encontrado",
+        });
+      }
+
+      if (post.automation?.posts.length === 1) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Automação precisa de pelo menos 1 post",
+        });
+      }
+
       return await prisma.post.delete({
         where: {
           id: input.id,

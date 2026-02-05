@@ -97,8 +97,8 @@ export const useUpdateActiveAutomation = () => {
           }),
         );
       },
-      onError: () => {
-        toast.error("Erro ao atualizar automação");
+      onError: (error) => {
+        toast.error(error.message);
       },
     }),
   );
@@ -157,8 +157,8 @@ export const useDeletePost = () => {
           }),
         );
       },
-      onError: () => {
-        toast.error("Erro ao deletar post");
+      onError: (error) => {
+        toast.error(error.message);
       },
     }),
   );
