@@ -1,19 +1,28 @@
-import { CallToAction } from "@/components/marketing/call-to-action";
-import { ContentSection } from "@/components/marketing/content";
+import { Comparison } from "@/components/marketing/comparison";
+import { CTA } from "@/components/marketing/cta";
+import { FAQ } from "@/components/marketing/faq";
 import { Features } from "@/components/marketing/features";
-import { FooterSection } from "@/components/marketing/footer";
-import { HeroSection } from "@/components/marketing/hero-section";
-import { Pricing } from "@/components/marketing/pricing";
+import { Footer } from "@/components/marketing/footer";
+import { Hero } from "@/components/marketing/hero";
+import { HowItWorks } from "@/components/marketing/howitwork";
+import { Problem } from "@/components/marketing/problem";
+import { SocialCase } from "@/components/marketing/social-case";
+import { Transformation } from "@/components/marketing/transformation";
 
 export default function Page() {
   return (
     <>
-      <HeroSection />
+      <Hero />
+      <Problem />
+      <Transformation />
+      <HowItWorks />
       <Features />
-      <ContentSection />
-      <Pricing />
-      <CallToAction />
-      <FooterSection />
+      <SocialCase />
+      <Comparison />
+      <CTA />
+      <FAQ />
+      <Footer />
+      {/* <FooterSection /> */}
     </>
   );
 }

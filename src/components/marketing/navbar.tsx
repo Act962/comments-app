@@ -5,11 +5,12 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "./logo";
+import { AppLogo } from "../app-logo";
 
 const menuItems = [
-  { name: "Features", href: "/#features" },
-  { name: "Solution", href: "/#content" },
-  { name: "Pricing", href: "/#pricing" },
+  { name: "Funcionalidades", href: "/#features" },
+  { name: "Solução", href: "/#solution" },
+  { name: "Preço", href: "/#pricing" },
 ];
 
 export function Navbar() {
@@ -27,9 +28,9 @@ export function Navbar() {
               <Link
                 href="/"
                 aria-label="home"
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 h-12"
               >
-                <Logo />
+                <AppLogo />
               </Link>
 
               <button
@@ -61,7 +62,7 @@ export function Navbar() {
               <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit lg:border-l lg:pl-6">
                 <Button asChild variant="outline" size="sm">
                   <Link href="/login" prefetch>
-                    <span>Login</span>
+                    <span>Entrar</span>
                   </Link>
                 </Button>
                 <Button asChild size="sm">

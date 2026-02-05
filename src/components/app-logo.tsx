@@ -1,9 +1,12 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { ComponentProps, useEffect, useState } from "react";
 
-export function AppLogo() {
+interface AppLogoProps extends ComponentProps<"img"> {}
+
+export function AppLogo({ className, ...props }: AppLogoProps) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -17,12 +20,11 @@ export function AppLogo() {
     resolvedTheme === "dark" ? "/icone-dark.png" : "/icone-dark.png";
 
   return (
-    <div className="relative w-full ">
-      <img
-        src={logoSrc}
-        alt="Logo"
-        className="bg-contain bg-center size-full"
-      />
-    </div>
+    <img
+      src={logoSrc}
+      alt="Logo"
+      className={cn("bg-contain bg-center size-full", className)}
+      {...props}
+    />
   );
 }

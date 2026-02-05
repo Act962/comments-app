@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Navbar } from "@/components/marketing/navbar";
-import { FooterSection } from "@/components/marketing/footer";
+import { FooterSection } from "@/components/marketing/footer-section";
 import { Logo } from "@/components/marketing/logo";
 import {
   Shield,

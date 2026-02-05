@@ -79,7 +79,9 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton className="h-16">
-              <AppLogo />
+              <div className="relative w-full">
+                <AppLogo />
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
