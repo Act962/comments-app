@@ -1,13 +1,9 @@
-import {
-  getKeywordAutomation,
-  getKeywordPost,
-  matchKeyword,
-  trackResponse,
-} from "@/actions/webhook";
+export const runtime = "nodejs";
+
+import crypto from "node:crypto";
+import { ensureEventNotProcessed } from "@/actions/automations";
 import { parseWebhook } from "@/features/webhook/parser";
 import { routeEvent } from "@/features/webhook/router";
-import { sendCommentReply, sendDM, sendPrivateMessage } from "@/lib/fetch";
-import { openaiClient } from "@/lib/openai";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
@@ -44,9 +40,22 @@ export async function POST(req: Request) {
 
     console.dir(events, { depth: null });
 
-    for (const event of events) {
-      await routeEvent(event);
-    }
+    await Promise.all(
+      events.map(async (event) => {
+        const eventId =
+          event.type === "MESSAGE" ? event.messageId : event.commentId;
+
+        const shouldProcess = await ensureEventNotProcessed(
+          eventId,
+          event.type,
+          event.accountId,
+        );
+
+        if (!shouldProcess) return;
+
+        return routeEvent(event);
+      }),
+    );
 
     return NextResponse.json(
       {

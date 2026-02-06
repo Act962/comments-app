@@ -1,20 +1,52 @@
 import prisma from "@/lib/db";
 
-export const matchKeyword = async (keyword: string, accountId: string) => {
-  return await prisma.keyword.findFirst({
+// export const matchKeyword = async (keyword: string, userId: string) => {
+//   return await prisma.keyword.findFirst({
+//     where: {
+//       word: {
+//         equals: keyword,
+//         mode: "insensitive",
+//       },
+//       automation: {
+//         active: true,
+//         userId,
+//       },
+//     },
+//   });
+// };
+
+export const matchKeyword = async (keyword: string, userId: string) => {
+  // Busca keywords ativas do usuário
+  const keywords = await prisma.keyword.findMany({
     where: {
-      word: {
-        equals: keyword,
-        mode: "insensitive",
-      },
       automation: {
         active: true,
-        user: {
-          id: accountId,
-        },
+        userId,
       },
     },
+    include: {
+      automation: true,
+    },
   });
+
+  if (!keywords.length) return null;
+
+  // Normaliza o texto
+  const normalizedText = keyword.toLowerCase().trim();
+
+  // Encontra match com prioridade (keywords mais longas primeiro)
+  const sortedKeywords = keywords.sort((a, b) => b.word.length - a.word.length);
+
+  for (const kw of sortedKeywords) {
+    const normalizedWord = kw.word.toLowerCase().trim();
+
+    // Verifica se a keyword existe no texto
+    if (normalizedText.includes(normalizedWord)) {
+      return kw;
+    }
+  }
+
+  return null;
 };
 
 export const getKeywordAutomation = async (

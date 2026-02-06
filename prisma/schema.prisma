@@ -268,3 +268,12 @@ model Subscription {
 
   @@map("subscription")
 }
+
+model ProcessedEvent {
+  id String @id
+  type String
+  accountId String
+  createdAt DateTime @default(now())
+
+  @@index([accountId])
+}

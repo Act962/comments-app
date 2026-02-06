@@ -1,4 +1,5 @@
 import { handleComment } from "./handler/comment.handler";
+import { handleMessageEvent } from "./handler/message.handler";
 import { NormalizedEvent } from "./parser";
 
 export async function routeEvent(event: NormalizedEvent) {
@@ -6,6 +7,7 @@ export async function routeEvent(event: NormalizedEvent) {
     case "MESSAGE":
       console.log("Message");
       console.dir(event, { depth: null });
+      return handleMessageEvent(event);
       //
       break;
     case "COMMENT":
