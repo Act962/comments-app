@@ -23,7 +23,7 @@ interface Post {
   postid: string;
   caption?: string;
   media: string;
-  mediaType: "IMAGE" | "VIDEO" | "CAROSEL_ALBUM";
+  mediaType: "IMAGE" | "VIDEO" | "CAROUSEL_ALBUM";
 }
 
 export function PostButton({ automationId }: { automationId: string }) {
@@ -106,6 +106,17 @@ export function PostButton({ automationId }: { automationId: string }) {
                           <video
                             src={post.media_url}
                             muted
+                            className={cn(
+                              "object-fill size-full transition",
+                              isSelected && "opacity-75",
+                            )}
+                          />
+                        )}
+
+                        {post.media_type === "CAROUSEL_ALBUM" && (
+                          <img
+                            src={post.media_url}
+                            alt={post.caption ?? ""}
                             className={cn(
                               "object-fill size-full transition",
                               isSelected && "opacity-75",

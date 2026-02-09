@@ -30,15 +30,7 @@ export async function POST(req: Request) {
   try {
     const payload = await req.json();
 
-    console.log("Payload");
-
-    console.dir(payload, { depth: null });
-
     const events = parseWebhook(payload);
-
-    console.log("Event");
-
-    console.dir(events, { depth: null });
 
     await Promise.all(
       events.map(async (event) => {
@@ -66,7 +58,6 @@ export async function POST(req: Request) {
       },
     );
   } catch (error) {
-    console.log(error);
     return NextResponse.json(
       {
         message: "Error",

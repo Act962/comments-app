@@ -71,6 +71,13 @@ export function PostNode({ automationId }: { automationId: string }) {
                         className="size-full object-fill"
                       />
                     )}
+                    {post.mediaType === "CAROUSEL_ALBUM" && (
+                      <img
+                        src={post.media}
+                        alt="image"
+                        className="size-full object-fill"
+                      />
+                    )}
                   </div>
                 );
               })}
@@ -134,6 +141,14 @@ export const PostView = ({ open, onOpenChange, post }: PostViewProps) => {
               muted
               controls
               autoPlay
+              className="size-full object-fill"
+            />
+          )}
+
+          {post.mediaType === "CAROUSEL_ALBUM" && (
+            <img
+              src={post.media}
+              alt="image"
               className="size-full object-fill"
             />
           )}

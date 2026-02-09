@@ -14,17 +14,11 @@ export async function handleMessageEvent(event: NormalizedEvent) {
 
   if (!integration || !integration.userId) return;
 
-  console.log("Integration", integration);
-
   const matcher = await matchKeyword(event.text, integration.userId);
 
   if (!matcher?.automationId) return;
 
-  console.log("Matcher", matcher);
-
   const automation = await getKeywordAutomation(matcher.automationId, true);
-
-  console.log("Automation", automation);
 
   if (!automation?.active || !automation?.listeners) return;
 
@@ -33,8 +27,6 @@ export async function handleMessageEvent(event: NormalizedEvent) {
   )?.token;
 
   if (!token) return;
-
-  console.log("Token", token);
 
   if (automation.listeners.listener === "SMARTAI") {
     const response = await openaiClient.responses.create({

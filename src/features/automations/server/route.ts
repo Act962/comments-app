@@ -151,7 +151,7 @@ export const automationsRouter = createTRPCRouter({
             postId: z.string(),
             caption: z.string().optional(),
             media: z.string(),
-            mediaType: z.enum(["IMAGE", "VIDEO", "CAROSEL_ALBUM"]),
+            mediaType: z.enum(["IMAGE", "VIDEO", "CAROUSEL_ALBUM"]),
           }),
         ),
       }),

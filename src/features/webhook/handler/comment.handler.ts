@@ -64,7 +64,6 @@ export async function handleComment(event: NormalizedEvent) {
 
     return;
   }
-  console.log("Send private message");
   await sendPrivateMessage(
     event.accountId,
     event.commentId,
@@ -73,7 +72,6 @@ export async function handleComment(event: NormalizedEvent) {
   );
 
   if (automation.listeners.commentReply) {
-    console.log("Send comment reply");
     await sendCommentReply(
       event.commentId,
       automation.listeners.commentReply,
