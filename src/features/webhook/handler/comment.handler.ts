@@ -5,8 +5,9 @@ import {
   matchKeyword,
 } from "@/actions/webhook";
 import { NormalizedEvent } from "../parser";
-import { sendCommentReply, sendPrivateMessage } from "@/lib/fetch";
+import { sendCommentReply, sendDM, sendPrivateMessage } from "@/lib/fetch";
 import { openaiClient } from "@/lib/openai";
+import { splitText } from "@/lib/utils";
 
 export async function handleComment(event: NormalizedEvent) {
   if (event.type !== "COMMENT") return;
@@ -46,12 +47,20 @@ export async function handleComment(event: NormalizedEvent) {
     });
 
     if (response.output_text) {
+      const chunks = splitText(response.output_text, 1000);
+
       await sendPrivateMessage(
         event.accountId,
         event.commentId,
-        response.output_text,
+        chunks[0],
         token,
       );
+
+      if (chunks.length > 1) {
+        for (let i = 1; i < chunks.length; i++) {
+          await sendDM(event.accountId, event.fromId, chunks[i], token);
+        }
+      }
     }
 
     if (automation.listeners.commentReply) {
@@ -64,12 +73,23 @@ export async function handleComment(event: NormalizedEvent) {
 
     return;
   }
-  await sendPrivateMessage(
-    event.accountId,
-    event.commentId,
-    automation.listeners.prompt,
+
+  console.log("Datas", {
+    accountId: event.accountId,
+    commentId: event.commentId,
+    prompt: automation.listeners.prompt,
     token,
-  );
+  });
+
+  const chunks = splitText(automation.listeners.prompt, 1000);
+
+  await sendPrivateMessage(event.accountId, event.commentId, chunks[0], token);
+
+  if (chunks.length > 1) {
+    for (let i = 1; i < chunks.length; i++) {
+      await sendDM(event.accountId, event.fromId, chunks[i], token);
+    }
+  }
 
   if (automation.listeners.commentReply) {
     await sendCommentReply(

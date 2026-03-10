@@ -2,7 +2,15 @@
 
 import { Separator } from "@/components/ui/separator";
 import { useSuspenseAutomation } from "@/features/automations/hooks/use-automations";
-import { BadgeAlertIcon, InstagramIcon, SendIcon } from "lucide-react";
+import {
+  BadgeAlertIcon,
+  Edit2Icon,
+  EditIcon,
+  InstagramIcon,
+  SendIcon,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ThenActionUpdate } from "./then-action-update";
 import { PostButton } from "./post-button";
 
 export function ThenNode({ automationId }: { automationId: string }) {
@@ -27,7 +35,7 @@ export function ThenNode({ automationId }: { automationId: string }) {
         Então...
       </div>
 
-      <div className="bg-background p-3 rounded-xl flex flex-col gap-y-2">
+      <div className="bg-background p-3 rounded-xl flex flex-col gap-y-2 group/prompt">
         <div className="flex gap-x-2 items-center">
           {automation.listeners.listener === "MESSAGE" ? (
             <InstagramIcon />
@@ -39,6 +47,11 @@ export function ThenNode({ automationId }: { automationId: string }) {
               ? "Enviar mensagem ao usuário"
               : "Resposta IA"}
           </p>
+
+          <ThenActionUpdate
+            automationId={automationId}
+            initialData={automation.listeners}
+          />
         </div>
         <p className="font-light text-muted-foreground">
           {automation.listeners.prompt}

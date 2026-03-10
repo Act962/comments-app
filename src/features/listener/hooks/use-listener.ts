@@ -17,3 +17,20 @@ export const useCreateListener = () => {
     }),
   );
 };
+
+export const useUpdateListener = () => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    trpc.listener.update.mutationOptions({
+      onSuccess: (data) => {
+        queryClient.invalidateQueries(
+          trpc.automations.getOne.queryOptions({
+            id: data.automationId!,
+          }),
+        );
+      },
+    }),
+  );
+};

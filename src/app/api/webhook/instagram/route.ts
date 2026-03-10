@@ -30,6 +30,8 @@ export async function POST(req: Request) {
   try {
     const payload = await req.json();
 
+    console.dir(payload, { depth: null });
+
     const events = parseWebhook(payload);
 
     await Promise.all(
@@ -58,9 +60,10 @@ export async function POST(req: Request) {
       },
     );
   } catch (error) {
+    console.log("Webhook Error", error);
     return NextResponse.json(
       {
-        message: "Error",
+        message: "Webhook Erro",
       },
       {
         status: 500,

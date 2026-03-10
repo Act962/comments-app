@@ -22,4 +22,25 @@ export const listenerRouter = createTRPCRouter({
         },
       });
     }),
+  update: protectedProcedure
+    .input(
+      z.object({
+        automationId: z.string(),
+        listener: z.enum(["SMARTAI", "MESSAGE"]).optional(),
+        prompt: z.string().optional(),
+        reply: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await prisma.listerner.update({
+        where: {
+          automationId: input.automationId,
+        },
+        data: {
+          listener: input.listener,
+          prompt: input.prompt,
+          commentReply: input.reply,
+        },
+      });
+    }),
 });

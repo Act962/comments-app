@@ -18,9 +18,12 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateListener } from "@/features/listener/hooks/use-listener";
+import {
+  useCreateListener,
+  useUpdateListener,
+} from "@/features/listener/hooks/use-listener";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PlusIcon } from "lucide-react";
+import { EditIcon } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useState } from "react";
@@ -33,23 +36,32 @@ const schema = z.object({
 
 type Schema = z.infer<typeof schema>;
 
-export const ThenAction = ({ automationId }: { automationId: string }) => {
+interface Props {
+  automationId: string;
+  initialData: {
+    listener: "SMARTAI" | "MESSAGE";
+    prompt: string;
+    commentReply?: string | null;
+  };
+}
+
+export const ThenActionUpdate = ({ automationId, initialData }: Props) => {
   const [open, setOpen] = useState(false);
   const form = useForm<Schema>({
     resolver: zodResolver(schema),
     defaultValues: {
-      type: "MESSAGE",
-      prompt: "",
-      reply: "",
+      type: initialData.listener,
+      prompt: initialData.prompt,
+      reply: initialData.commentReply || "",
     },
   });
 
-  const createListener = useCreateListener();
+  const updateListener = useUpdateListener();
 
   const watchType = form.watch("type");
 
   const onSubmit = (data: Schema) => {
-    createListener.mutate(
+    updateListener.mutate(
       {
         automationId: automationId,
         listener: data.type,
@@ -59,20 +71,22 @@ export const ThenAction = ({ automationId }: { automationId: string }) => {
       {
         onSuccess: () => {
           setOpen(false);
-          form.reset();
         },
       },
     );
   };
 
-  const isPending = createListener.isPending;
+  const isPending = updateListener.isPending;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="w-full border-dashed">
-          <PlusIcon className="size-4" />
-          Então
+        <Button
+          className="ml-auto opacity-0 group-hover/prompt:opacity-100"
+          size="icon-xs"
+          variant="outline"
+        >
+          <EditIcon />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[400px]">
@@ -134,8 +148,8 @@ export const ThenAction = ({ automationId }: { automationId: string }) => {
                   : "Adicione a mensagem que será enviada para seu cliente"
               }
               {...form.register("prompt")}
-              className="max-h-32"
               disabled={isPending}
+              className="max-h-32"
             />
           </Field>
 
@@ -147,7 +161,7 @@ export const ThenAction = ({ automationId }: { automationId: string }) => {
 
           <Button type="submit" className="w-full" disabled={isPending}>
             {isPending && <Spinner />}
-            Adicionar
+            Atualizar
           </Button>
         </form>
       </PopoverContent>
