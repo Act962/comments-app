@@ -5,6 +5,7 @@ import {
   Field,
   FieldContent,
   FieldDescription,
+  FieldError,
   FieldLabel,
   FieldSet,
   FieldTitle,
@@ -30,7 +31,10 @@ import { useState } from "react";
 
 const schema = z.object({
   type: z.enum(["MESSAGE", "SMARTAI"]),
-  prompt: z.string().min(1, "Digite um prompt"),
+  prompt: z
+    .string()
+    .min(1, "Digite um prompt")
+    .max(1000, "Mensagem muito longa"),
   reply: z.string().optional(),
 });
 
@@ -140,17 +144,33 @@ export const ThenActionUpdate = ({ automationId, initialData }: Props) => {
             }}
           />
 
-          <Field className="">
-            <Textarea
-              placeholder={
-                watchType === "SMARTAI"
-                  ? "Adicione o prompt que a IA irá usar..."
-                  : "Adicione a mensagem que será enviada para seu cliente"
-              }
-              {...form.register("prompt")}
-              disabled={isPending}
-              className="max-h-32"
+          <Field className="relative text-end">
+            <Controller
+              control={form.control}
+              name="prompt"
+              render={({ field, fieldState }) => (
+                <>
+                  <Textarea
+                    placeholder={
+                      watchType === "SMARTAI"
+                        ? "Adicione o prompt que a IA irá usar..."
+                        : "Adicione a mensagem que será enviada para seu cliente"
+                    }
+                    {...field}
+                    disabled={isPending}
+                    className="max-h-32 pr-12"
+                  />
+
+                  {fieldState.error && (
+                    <FieldError>{fieldState.error.message}</FieldError>
+                  )}
+                </>
+              )}
             />
+
+            <span className="text-muted-foreground">
+              {form.watch("prompt")?.length || 0}/1000
+            </span>
           </Field>
 
           <Input
