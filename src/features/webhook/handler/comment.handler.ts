@@ -85,11 +85,20 @@ export async function handleComment(event: NormalizedEvent) {
 
   await sendPrivateMessage(event.accountId, event.commentId, chunks[0], token);
 
-  if (chunks.length > 1) {
-    for (let i = 1; i < chunks.length; i++) {
-      await sendDM(event.accountId, event.fromId, chunks[i], token);
-    }
+  for (let i = 1; i < chunks.length; i++) {
+    await sendPrivateMessage(
+      event.accountId,
+      event.commentId,
+      chunks[i],
+      token,
+    );
   }
+
+  // if (chunks.length > 1) {
+  //   for (let i = 1; i < chunks.length; i++) {
+  //     await sendDM(event.accountId, event.fromId, chunks[i], token);
+  //   }
+  // }
 
   if (automation.listeners.commentReply) {
     await sendCommentReply(
