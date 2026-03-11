@@ -47,20 +47,26 @@ export async function handleComment(event: NormalizedEvent) {
     });
 
     if (response.output_text) {
-      const chunks = splitText(response.output_text, 1000);
+      // const chunks = splitText(response.output_text, 1000);
 
+      // await sendPrivateMessage(
+      //   event.accountId,
+      //   event.commentId,
+      //   chunks[0],
+      //   token,
+      // );
+
+      // if (chunks.length > 1) {
+      //   for (let i = 1; i < chunks.length; i++) {
+      //     await sendDM(event.accountId, event.fromId, chunks[i], token);
+      //   }
+      // }
       await sendPrivateMessage(
         event.accountId,
         event.commentId,
-        chunks[0],
+        response.output_text,
         token,
       );
-
-      if (chunks.length > 1) {
-        for (let i = 1; i < chunks.length; i++) {
-          await sendDM(event.accountId, event.fromId, chunks[i], token);
-        }
-      }
     }
 
     if (automation.listeners.commentReply) {
@@ -83,13 +89,20 @@ export async function handleComment(event: NormalizedEvent) {
 
   const chunks = splitText(automation.listeners.prompt, 1000);
 
-  await sendPrivateMessage(event.accountId, event.commentId, chunks[0], token);
+  // await sendPrivateMessage(event.accountId, event.commentId, chunks[0], token);
 
-  if (chunks.length > 1) {
-    for (let i = 1; i < chunks.length; i++) {
-      await sendDM(event.accountId, event.fromId, chunks[i], token);
-    }
-  }
+  // if (chunks.length > 1) {
+  //   for (let i = 1; i < chunks.length; i++) {
+  //     await sendDM(event.accountId, event.fromId, chunks[i], token);
+  //   }
+  // }
+
+  await sendPrivateMessage(
+    event.accountId,
+    event.commentId,
+    automation.listeners.prompt,
+    token,
+  );
 
   if (automation.listeners.commentReply) {
     await sendCommentReply(
