@@ -195,12 +195,12 @@ export const automationsRouter = createTRPCRouter({
         });
       }
 
-      if (post.automation?.posts.length === 1) {
+     /*  if (post.automation?.posts.length === 1) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Automação precisa de pelo menos 1 post",
         });
-      }
+      } */
 
       return await prisma.post.delete({
         where: {

@@ -41,8 +41,27 @@ export const useInfinitePosts = () => {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useInfiniteQuery(query);
 
+  const posts =
+    data?.pages
+      .flatMap((page) => page.items ?? [])
+      .filter((p) => {
+        if (!p) return false;
+        const post = p as {
+          id?: unknown;
+          media_type?: unknown;
+          media_url?: unknown;
+        };
+        return (
+          typeof post.id === "string" &&
+          typeof post.media_url === "string" &&
+          (post.media_type === "IMAGE" ||
+            post.media_type === "VIDEO" ||
+            post.media_type === "CAROUSEL_ALBUM")
+        );
+      }) ?? [];
+
   return {
-    posts: data?.pages.flatMap((page) => page.items) ?? [],
+    posts,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,

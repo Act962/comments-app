@@ -103,11 +103,28 @@ export const userRouter = createTRPCRouter({
 
       const posts = await fetch(url);
 
-      const parsed = await posts.json();
+      const parsed: unknown = await posts.json();
+      const parsedObj = parsed as { data?: unknown; paging?: { next?: unknown } } | null;
+
+      const rawItems = Array.isArray(parsedObj?.data) ? parsedObj?.data : [];
+      const items = rawItems.filter((item): item is InstagramPostProps => {
+        if (!item || typeof item !== "object") return false;
+        const obj = item as Partial<InstagramPostProps>;
+        return (
+          typeof obj.id === "string" &&
+          typeof obj.media_url === "string" &&
+          (obj.media_type === "IMAGE" ||
+            obj.media_type === "VIDEO" ||
+            obj.media_type === "CAROUSEL_ALBUM")
+        );
+      });
 
       return {
-        items: parsed.data as InstagramPostProps[],
-        nextCursor: parsed.paging?.next ?? undefined,
+        items,
+        nextCursor:
+          typeof parsedObj?.paging?.next === "string"
+            ? parsedObj.paging.next
+            : undefined,
         status: posts.status,
       };
     }),

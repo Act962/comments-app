@@ -33,6 +33,18 @@ export function PostButton({ automationId }: { automationId: string }) {
     useInfinitePosts();
   const savePost = useSavePost();
 
+  const safePosts = posts.filter((post) => {
+    if (!post) return false;
+    const p = post as { id?: unknown; media_type?: unknown; media_url?: unknown };
+    return (
+      typeof p.id === "string" &&
+      typeof p.media_url === "string" &&
+      (p.media_type === "IMAGE" ||
+        p.media_type === "VIDEO" ||
+        p.media_type === "CAROUSEL_ALBUM")
+    );
+  });
+
   const onSelectPost = (post: Post) => {
     setSelectedPost((prev) => {
       if (prev.find((p) => p.postid === post.postid)) {
@@ -68,8 +80,8 @@ export function PostButton({ automationId }: { automationId: string }) {
           <ScrollArea className="h-[300px] overflow-hidden">
             <div className="w-full">
               <div className="flex flex-wrap w-full gap-3">
-                {posts.length > 0 ? (
-                  posts.map((post) => {
+                {safePosts.length > 0 ? (
+                  safePosts.map((post) => {
                     const isSelected = selectedPost.find(
                       (p) => p.postid === post.id,
                     );
