@@ -308,6 +308,8 @@ model SorteioPost {
   postId    String
   caption   String?
   media     String
+  mediaUrl  String?
+  permalink String?
   mediaType MEDIA_TYPE @default(IMAGE)
   createdAt DateTime   @default(now())
 

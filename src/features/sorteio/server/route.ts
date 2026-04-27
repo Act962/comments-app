@@ -134,6 +134,8 @@ export const sorteioRouter = createTRPCRouter({
             postId: z.string(),
             caption: z.string().optional(),
             media: z.string(),
+            mediaUrl: z.string().optional(),
+            permalink: z.string().optional(),
             mediaType: z.enum(["IMAGE", "VIDEO", "CAROUSEL_ALBUM"]),
           }),
         ),

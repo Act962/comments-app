@@ -46,6 +46,8 @@ export type SorteioDetailPost = {
   postId: string;
   caption: string | null;
   media: string;
+  mediaUrl: string | null;
+  permalink: string | null;
   mediaType: MEDIA_TYPE;
   createdAt: Date;
 };
