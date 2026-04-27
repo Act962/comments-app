@@ -78,6 +78,80 @@ export const sendCommentReply = async (
   );
 };
 
+export type InstagramComment = {
+  id: string;
+  text: string;
+  timestamp: string;
+  from?: { id: string; username?: string };
+  username?: string;
+};
+
+export const getMediaComments = async (
+  mediaId: string,
+  token: string,
+  after?: string,
+) => {
+  const url = new URL(`${process.env.INSTAGRAM_BASE_URL}/${mediaId}/comments`);
+  url.searchParams.set("fields", "id,text,timestamp,from,username");
+  url.searchParams.set("access_token", token);
+  url.searchParams.set("limit", "100");
+  if (after) url.searchParams.set("after", after);
+
+  const res = await axios.get<{
+    data: InstagramComment[];
+    paging?: { cursors?: { after?: string }; next?: string };
+  }>(url.toString());
+
+  return res.data;
+};
+
+export const getAllMediaComments = async (mediaId: string, token: string) => {
+  const all: InstagramComment[] = [];
+  let after: string | undefined;
+
+  do {
+    const page = await getMediaComments(mediaId, token, after);
+    all.push(...(page.data ?? []));
+    after = page.paging?.next ? page.paging.cursors?.after : undefined;
+  } while (after);
+
+  return all;
+};
+
+export type InstagramMedia = {
+  id: string;
+  caption?: string;
+  media_url: string;
+  media_type: "IMAGE" | "VIDEO" | "CAROUSEL_ALBUM";
+  thumbnail_url?: string;
+  timestamp: string;
+  permalink?: string;
+};
+
+export const getUserMedia = async (igUserId: string, token: string) => {
+  const url = new URL(`${process.env.INSTAGRAM_BASE_URL}/${igUserId}/media`);
+  url.searchParams.set(
+    "fields",
+    "id,caption,media_url,media_type,thumbnail_url,timestamp,permalink",
+  );
+  url.searchParams.set("access_token", token);
+  url.searchParams.set("limit", "50");
+
+  const res = await axios.get<{ data: InstagramMedia[] }>(url.toString());
+  return res.data.data ?? [];
+};
+
+export const getCommentFrom = async (commentId: string, token: string) => {
+  const url = new URL(`${process.env.INSTAGRAM_BASE_URL}/${commentId}`);
+  url.searchParams.set("fields", "from{id,username}");
+  url.searchParams.set("access_token", token);
+
+  const res = await axios.get<{
+    from?: { id: string; username?: string };
+  }>(url.toString());
+  return res.data.from;
+};
+
 export const generateTokens = async (code: string) => {
   const insta_form = new FormData();
   insta_form.append("client_id", process.env.INSTAGRAM_CLIENT_ID as string);

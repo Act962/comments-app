@@ -4,6 +4,7 @@ import {
   getKeywordPost,
   matchKeyword,
 } from "@/actions/webhook";
+import { upsertCommentFromWebhook } from "@/features/sorteio/server/comments-collector";
 import { NormalizedEvent } from "../parser";
 import { sendCommentReply, sendDM, sendPrivateMessage } from "@/lib/fetch";
 import { openaiClient } from "@/lib/openai";
@@ -13,6 +14,17 @@ export async function handleComment(event: NormalizedEvent) {
   if (event.type !== "COMMENT") return;
 
   if (event.accountId === event.fromId) return;
+
+  await upsertCommentFromWebhook({
+    accountId: event.accountId,
+    mediaId: event.mediaId,
+    commentId: event.commentId,
+    fromId: event.fromId,
+    fromUsername: event.fromUsername,
+    text: event.text,
+  }).catch((err) => {
+    console.error("[sorteio] Falha ao persistir comentário", err);
+  });
 
   const integration = await getIntegration(event.accountId);
 

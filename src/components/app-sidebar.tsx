@@ -5,6 +5,7 @@ import {
   BellIcon,
   ChevronsUpDownIcon,
   CircleQuestionMarkIcon,
+  GiftIcon,
   Home,
   HomeIcon,
   LaptopIcon,
@@ -16,23 +17,19 @@ import {
   SunIcon,
   UserIcon,
 } from "lucide-react";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "./ui/sidebar";
 import Link from "next/link";
-import { Card, CardContent } from "./ui/card";
-import { Button } from "./ui/button";
-import { authClient } from "@/lib/auth-client";
 import { usePathname, useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
+import { useEffect } from "react";
+import {
+  useCurrentSubscription,
+  useUpgradeSubscription,
+} from "@/features/subscription/hook/use-subscription";
+import { authClient } from "@/lib/auth-client";
+import { AppLogo } from "./app-logo";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Button } from "./ui/button";
+import { Card, CardContent } from "./ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,19 +43,24 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { Skeleton } from "./ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { useTheme } from "next-themes";
-import { AppLogo } from "./app-logo";
-import { useEffect } from "react";
 import {
-  useCurrentSubscription,
-  useUpgradeSubscription,
-} from "@/features/subscription/hook/use-subscription";
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "./ui/sidebar";
+import { Skeleton } from "./ui/skeleton";
 
 const menuItems = [
   { title: "Início", url: "/dashboard", icon: HomeIcon },
   { title: "Automações", url: "/workflows", icon: ActivityIcon },
+  { title: "Sorteios", url: "/sorteios", icon: GiftIcon },
   { title: "Integrações", url: "/integrations", icon: RocketIcon },
   { title: "Configurações", url: "/settings", icon: SettingsIcon },
   { title: "Ajuda", url: "/help", icon: CircleQuestionMarkIcon },

@@ -10,6 +10,7 @@ export type NormalizedEvent =
       type: "COMMENT";
       accountId: string;
       fromId: string;
+      fromUsername?: string;
       text: string;
       commentId: string;
       mediaId: string;
@@ -44,6 +45,7 @@ export function parseWebhook(payload: any): NormalizedEvent[] {
           type: "COMMENT",
           accountId: entry.id,
           fromId: change.value.from.id,
+          fromUsername: change.value.from.username,
           text: change.value.text,
           commentId: change.value.id,
           mediaId: change.value.media.id,

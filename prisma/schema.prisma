@@ -25,6 +25,7 @@ model User {
   notificationPreference NotificationPreference?
 
   stripeCustomerId String?
+  sorteios         Sorteio[]
 
   @@unique([email])
   @@map("user")
@@ -267,6 +268,87 @@ model Subscription {
   seats                Int?
 
   @@map("subscription")
+}
+
+enum SORTEIO_STATUS {
+  DRAFT
+  COLLECTING
+  CLOSED
+  DRAWN
+}
+
+model Sorteio {
+  id               String         @id @default(cuid())
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String         @default("Sem título")
+  prizeName        String?
+  prizeDescription String?
+  prizeImage       String?
+  winnersCount     Int            @default(1)
+  status           SORTEIO_STATUS @default(DRAFT)
+  slug             String         @unique
+  lastDrawnAt      DateTime?
+  rules            Json?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  posts    SorteioPost[]
+  comments SorteioComment[]
+  winners  SorteioWinner[]
+
+  @@index([userId])
+  @@map("sorteio")
+}
+
+model SorteioPost {
+  id        String     @id @default(cuid())
+  sorteioId String
+  sorteio   Sorteio    @relation(fields: [sorteioId], references: [id], onDelete: Cascade)
+  postId    String
+  caption   String?
+  media     String
+  mediaType MEDIA_TYPE @default(IMAGE)
+  createdAt DateTime   @default(now())
+
+  comments SorteioComment[]
+
+  @@unique([sorteioId, postId])
+  @@map("sorteio_post")
+}
+
+model SorteioComment {
+  id            String      @id @default(cuid())
+  sorteioId     String
+  sorteio       Sorteio     @relation(fields: [sorteioId], references: [id], onDelete: Cascade)
+  sorteioPostId String
+  sorteioPost   SorteioPost @relation(fields: [sorteioPostId], references: [id], onDelete: Cascade)
+  commentId     String
+  fromId        String
+  fromUsername  String?
+  text          String
+  commentedAt   DateTime
+  createdAt     DateTime    @default(now())
+
+  winner SorteioWinner?
+
+  @@unique([sorteioId, commentId])
+  @@index([sorteioId, fromId])
+  @@map("sorteio_comment")
+}
+
+model SorteioWinner {
+  id               String         @id @default(cuid())
+  sorteioId        String
+  sorteio          Sorteio        @relation(fields: [sorteioId], references: [id], onDelete: Cascade)
+  sorteioCommentId String         @unique
+  comment          SorteioComment @relation(fields: [sorteioCommentId], references: [id], onDelete: Cascade)
+  position         Int
+  drawnAt          DateTime       @default(now())
+
+  @@unique([sorteioId, sorteioCommentId])
+  @@unique([sorteioId, position])
+  @@map("sorteio_winner")
 }
 
 model ProcessedEvent {
