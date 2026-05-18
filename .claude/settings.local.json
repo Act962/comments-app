@@ -3,7 +3,9 @@
     "allow": [
       "Bash(pnpm exec *)",
       "Bash(pnpm db:generate)",
-      "Bash(pnpm lint *)"
+      "Bash(pnpm lint *)",
+      "Bash(xargs ls -1)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }

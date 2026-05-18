@@ -27,8 +27,47 @@ model User {
   stripeCustomerId String?
   sorteios         Sorteio[]
 
+  commentsConsents CommentsIntegrationConsent[]
+  commentsKeys     CommentsIntegrationKey[]
+
   @@unique([email])
   @@map("user")
+}
+
+model CommentsIntegrationConsent {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  userId      String
+  scopes      String[]
+  redirectUri String
+  consumedAt  DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([code])
+  @@index([expiresAt])
+  @@index([userId])
+  @@map("comments_integration_consents")
+}
+
+model CommentsIntegrationKey {
+  id               String    @id @default(cuid())
+  userId           String
+  apiKey           String    @unique
+  secretCiphertext String
+  scopes           String[]
+  consentByUserId  String
+  lastUsedAt       DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([apiKey])
+  @@map("comments_integration_keys")
 }
 
 model Session {
