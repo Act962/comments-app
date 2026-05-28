@@ -6,6 +6,7 @@ import {
   BadgeAlertIcon,
   Edit2Icon,
   EditIcon,
+  ExternalLinkIcon,
   InstagramIcon,
   SendIcon,
 } from "lucide-react";
@@ -56,6 +57,24 @@ export function ThenNode({ automationId }: { automationId: string }) {
         <p className="font-light text-muted-foreground">
           {automation.listeners.prompt}
         </p>
+        {automation.listeners.listener === "MESSAGE" &&
+          automation.listeners.buttons &&
+          automation.listeners.buttons.length > 0 && (
+            <div className="flex flex-col gap-1 mt-2">
+              {automation.listeners.buttons.map((b) => (
+                <div
+                  key={b.id}
+                  className="flex items-center gap-x-2 text-sm rounded-md border border-dashed px-3 py-2"
+                >
+                  <ExternalLinkIcon className="size-3" />
+                  <span className="font-medium">{b.title}</span>
+                  <span className="truncate text-muted-foreground text-xs">
+                    {b.url}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
       </div>
       {automation.posts.length > 0 ? (
         <></>

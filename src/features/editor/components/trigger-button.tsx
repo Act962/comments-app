@@ -59,7 +59,7 @@ export function TriggerButton({ automationId }: { automationId: string }) {
           Adicionar Gatilho
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[400px]">
+      <PopoverContent className="w-[calc(100vw-2rem)] max-w-[400px]">
         <FieldSet>
           <RadioGroup
             className="w-full"

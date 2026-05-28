@@ -37,7 +37,11 @@ export const automationsRouter = createTRPCRouter({
         },
         include: {
           keywords: true,
-          listeners: true,
+          listeners: {
+            include: {
+              buttons: { orderBy: { order: "asc" } },
+            },
+          },
           triggers: true,
           dms: true,
           posts: true,

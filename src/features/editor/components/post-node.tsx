@@ -15,6 +15,7 @@ import {
 import { MEDIA_TYPE } from "@/generated/prisma/enums";
 import { BadgeAlertIcon, InstagramIcon } from "lucide-react";
 import { useState } from "react";
+import { PostButton } from "./post-button";
 
 export function PostNode({ automationId }: { automationId: string }) {
   const { data: automation } = useSuspenseAutomation(automationId);
@@ -25,6 +26,8 @@ export function PostNode({ automationId }: { automationId: string }) {
     setOpenPost(post);
     setOpen(true);
   };
+
+  const existingPostIds = automation?.posts.map((p) => p.postId) ?? [];
 
   return (
     automation &&
@@ -83,6 +86,10 @@ export function PostNode({ automationId }: { automationId: string }) {
               })}
             </div>
           </div>
+          <PostButton
+            automationId={automationId}
+            existingPostIds={existingPostIds}
+          />
         </div>
         <PostView open={open} onOpenChange={setOpen} post={openPost} />
       </>

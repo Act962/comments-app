@@ -15,11 +15,37 @@ export const refreshToken = async (token: string) => {
   return refresh_token.data;
 };
 
+export type MessageButton = {
+  title: string;
+  url: string;
+};
+
+const buildMessagePayload = (text: string, buttons?: MessageButton[]) => {
+  if (!buttons || buttons.length === 0) {
+    return { text };
+  }
+  return {
+    attachment: {
+      type: "template",
+      payload: {
+        template_type: "button",
+        text: text.slice(0, 640),
+        buttons: buttons.slice(0, 3).map((b) => ({
+          type: "web_url",
+          url: b.url,
+          title: b.title,
+        })),
+      },
+    },
+  };
+};
+
 export const sendDM = async (
   userId: string,
   recieverId: string,
   prompt: string,
   token: string,
+  buttons?: MessageButton[],
 ) => {
   return await axios.post(
     `${process.env.INSTAGRAM_BASE_URL}/${userId}/messages`,
@@ -27,9 +53,7 @@ export const sendDM = async (
       recipient: {
         id: recieverId,
       },
-      message: {
-        text: prompt,
-      },
+      message: buildMessagePayload(prompt, buttons),
     },
     {
       headers: {
@@ -45,6 +69,7 @@ export const sendPrivateMessage = async (
   commentId: string,
   prompt: string,
   token: string,
+  buttons?: MessageButton[],
 ) => {
   return await axios.post(
     `${process.env.INSTAGRAM_BASE_URL}/${userId}/messages`,
@@ -52,9 +77,7 @@ export const sendPrivateMessage = async (
       recipient: {
         comment_id: commentId,
       },
-      message: {
-        text: prompt,
-      },
+      message: buildMessagePayload(prompt, buttons),
     },
     {
       headers: {

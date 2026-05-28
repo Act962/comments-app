@@ -65,7 +65,11 @@ export const getKeywordAutomation = async (
           type: dm ? "DM" : "COMMENT",
         },
       },
-      listeners: true,
+      listeners: {
+        include: {
+          buttons: { orderBy: { order: "asc" } },
+        },
+      },
       user: {
         select: {
           integrations: true,
