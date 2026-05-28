@@ -26,12 +26,21 @@ interface Post {
   mediaType: "IMAGE" | "VIDEO" | "CAROUSEL_ALBUM";
 }
 
-export function PostButton({ automationId }: { automationId: string }) {
+export function PostButton({
+  automationId,
+  existingPostIds = [],
+}: {
+  automationId: string;
+  existingPostIds?: string[];
+}) {
   // const { posts, status } = useQueryPosts();
+  const [open, setOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post[]>([]);
   const { posts, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useInfinitePosts();
   const savePost = useSavePost();
+
+  const existingPostIdSet = new Set(existingPostIds);
 
   const safePosts = posts.filter((post) => {
     if (!post) return false;
@@ -39,6 +48,7 @@ export function PostButton({ automationId }: { automationId: string }) {
     return (
       typeof p.id === "string" &&
       typeof p.media_url === "string" &&
+      !existingPostIdSet.has(p.id as string) &&
       (p.media_type === "IMAGE" ||
         p.media_type === "VIDEO" ||
         p.media_type === "CAROUSEL_ALBUM")
@@ -54,28 +64,36 @@ export function PostButton({ automationId }: { automationId: string }) {
     });
   };
   const onSavePost = () => {
-    savePost.mutate({
-      automationId,
-      posts: selectedPost.map((post) => ({
-        postId: post.postid,
-        media: post.media,
-        mediaType: post.mediaType,
-        caption: post.caption,
-      })),
-    });
+    savePost.mutate(
+      {
+        automationId,
+        posts: selectedPost.map((post) => ({
+          postId: post.postid,
+          media: post.media,
+          mediaType: post.mediaType,
+          caption: post.caption,
+        })),
+      },
+      {
+        onSuccess: () => {
+          setSelectedPost([]);
+          setOpen(false);
+        },
+      },
+    );
   };
 
   const isDisabled = selectedPost.length === 0 || savePost.isPending;
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" className="w-full border-dashed">
           <PlusIcon className="size-4" />
           Adicionar Post
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[400px]">
+      <PopoverContent className="w-[calc(100vw-2rem)] max-w-[400px]">
         <div className="flex flex-col gap-y-3 w-full">
           <ScrollArea className="h-[300px] overflow-hidden">
             <div className="w-full">

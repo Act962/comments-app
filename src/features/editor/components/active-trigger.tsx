@@ -52,7 +52,7 @@ export const ActiveTrigger = ({
               <PlusIcon className="size-3" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-[400px]">
+          <PopoverContent align="start" className="w-[calc(100vw-2rem)] max-w-[400px]">
             <Keywords automationId={automationId} />
           </PopoverContent>
         </Popover>
