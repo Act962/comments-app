@@ -8,8 +8,12 @@ import { upsertCommentFromWebhook } from "@/features/sorteio/server/comments-col
 import { sendCommentReply, sendDM, sendPrivateMessage } from "@/lib/fetch";
 import { handleTokenError } from "@/lib/instagram-api";
 import { openaiClient } from "@/lib/openai";
-import { splitText } from "@/lib/utils";
+import { splitTextByBytes } from "@/lib/utils";
 import type { NormalizedEvent } from "../parser";
+
+// Meta caps /me/messages text at 1000 UTF-8 bytes. Keep a safety margin
+// so accents and emojis never push a chunk over the cliff.
+const MAX_MESSAGE_BYTES = 950;
 
 export async function handleComment(event: NormalizedEvent) {
   if (event.type !== "COMMENT") return;
@@ -63,7 +67,10 @@ export async function handleComment(event: NormalizedEvent) {
       });
 
       if (response.output_text) {
-        const chunks = splitText(response.output_text, 1000);
+        const chunks = splitTextByBytes(
+          response.output_text,
+          MAX_MESSAGE_BYTES,
+        );
 
         await sendPrivateMessage(
           event.accountId,
@@ -90,7 +97,10 @@ export async function handleComment(event: NormalizedEvent) {
       return;
     }
 
-    const chunks = splitText(automation.listeners.prompt, 1000);
+    const chunks = splitTextByBytes(
+      automation.listeners.prompt,
+      MAX_MESSAGE_BYTES,
+    );
     const buttons = automation.listeners.buttons?.map((b) => ({
       title: b.title,
       url: b.url,

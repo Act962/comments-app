@@ -6,7 +6,12 @@ import {
 import { sendDM } from "@/lib/fetch";
 import { handleTokenError } from "@/lib/instagram-api";
 import { openaiClient } from "@/lib/openai";
+import { splitTextByBytes } from "@/lib/utils";
 import type { NormalizedEvent } from "../parser";
+
+// Meta caps /me/messages text at 1000 UTF-8 bytes. Keep a small safety
+// margin so accents and emojis never push a chunk over the cliff.
+const MAX_MESSAGE_BYTES = 950;
 
 export async function handleMessageEvent(event: NormalizedEvent) {
   if (event.type !== "MESSAGE") return;
@@ -43,12 +48,13 @@ export async function handleMessageEvent(event: NormalizedEvent) {
       });
 
       if (response.output_text) {
-        await sendDM(
-          event.accountId,
-          event.fromId,
+        const chunks = splitTextByBytes(
           response.output_text,
-          token,
+          MAX_MESSAGE_BYTES,
         );
+        for (const chunk of chunks) {
+          await sendDM(event.accountId, event.fromId, chunk, token);
+        }
       }
 
       return;
@@ -59,13 +65,20 @@ export async function handleMessageEvent(event: NormalizedEvent) {
         title: b.title,
         url: b.url,
       }));
-      await sendDM(
-        event.accountId,
-        event.fromId,
+      const chunks = splitTextByBytes(
         automation.listeners.prompt,
-        token,
-        buttons,
+        MAX_MESSAGE_BYTES,
       );
+      const lastIndex = chunks.length - 1;
+      for (let i = 0; i < chunks.length; i++) {
+        await sendDM(
+          event.accountId,
+          event.fromId,
+          chunks[i],
+          token,
+          i === lastIndex ? buttons : undefined,
+        );
+      }
     }
   } catch (err) {
     const handled = await handleTokenError(err, integrationId);
