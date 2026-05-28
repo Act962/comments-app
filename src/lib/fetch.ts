@@ -1,8 +1,14 @@
 "use server";
 
 import axios from "axios";
-export const refresshToken = async (token: string) => {
-  const refresh_token = await axios.get(
+export type InstagramTokenResponse = {
+  access_token: string;
+  token_type?: string;
+  expires_in: number;
+};
+
+export const refreshToken = async (token: string) => {
+  const refresh_token = await axios.get<InstagramTokenResponse>(
     `${process.env.INSTAGRAM_BASE_URL}/refresh_access_token?grant_type=ig_refresh_token&access_token=${token}`,
   );
 
@@ -182,8 +188,11 @@ export const generateTokens = async (code: string) => {
       { method: "GET" },
     );
 
-    const long_token = await longToken.json();
+    const long_token: InstagramTokenResponse = await longToken.json();
 
-    return long_token.access_token;
+    return {
+      access_token: long_token.access_token,
+      expires_in: long_token.expires_in,
+    };
   }
 };

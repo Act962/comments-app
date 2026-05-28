@@ -1,7 +1,8 @@
 "use client";
 
+import { onInstagramOAuth } from "@/actions/integrations";
 import { EntityContainer, EntityHeader } from "@/components/entity-components";
-import { IntegrationCardProps, INTEGRATIONS } from "../constants";
+import { Button } from "@/components/ui/button";
 import {
   Item,
   ItemActions,
@@ -10,8 +11,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
-import { Button } from "@/components/ui/button";
-import { onInstagramOAuth } from "@/actions/integrations";
+import { INTEGRATIONS, type IntegrationCardProps } from "../constants";
 import { useSuspenseIntegrations } from "../hooks/use-integration";
 
 export const IntegrationsList = () => {
@@ -40,8 +40,18 @@ export const IngtegrationCard = ({
   const { data } = useSuspenseIntegrations();
 
   const integrated = data.find((integration) => integration.name === strategy);
+  const needsReconnect = integrated?.status === "NEEDS_RECONNECT";
 
   const Icon = icon;
+  const buttonLabel = !integrated
+    ? "Conectar"
+    : needsReconnect
+      ? "Reconectar"
+      : "Conectado";
+  const cardDescription = needsReconnect
+    ? "Sua conexão expirou. Reconecte para retomar as automações."
+    : description;
+
   return (
     <Item size="sm" variant="outline">
       <ItemMedia>
@@ -49,11 +59,15 @@ export const IngtegrationCard = ({
       </ItemMedia>
       <ItemContent>
         <ItemTitle>{title}</ItemTitle>
-        <ItemDescription>{description}</ItemDescription>
+        <ItemDescription>{cardDescription}</ItemDescription>
       </ItemContent>
       <ItemActions>
-        <Button onClick={onInstaOAuth} disabled={!!integrated}>
-          {integrated ? "Conectado" : "Conectar"}
+        <Button
+          onClick={onInstaOAuth}
+          disabled={!!integrated && !needsReconnect}
+          variant={needsReconnect ? "destructive" : "default"}
+        >
+          {buttonLabel}
         </Button>
       </ItemActions>
     </Item>

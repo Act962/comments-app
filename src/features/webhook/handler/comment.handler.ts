@@ -5,10 +5,11 @@ import {
   matchKeyword,
 } from "@/actions/webhook";
 import { upsertCommentFromWebhook } from "@/features/sorteio/server/comments-collector";
-import { NormalizedEvent } from "../parser";
 import { sendCommentReply, sendDM, sendPrivateMessage } from "@/lib/fetch";
+import { handleTokenError } from "@/lib/instagram-api";
 import { openaiClient } from "@/lib/openai";
 import { splitText } from "@/lib/utils";
+import type { NormalizedEvent } from "../parser";
 
 export async function handleComment(event: NormalizedEvent) {
   if (event.type !== "COMMENT") return;
@@ -42,37 +43,69 @@ export async function handleComment(event: NormalizedEvent) {
 
   if (!post) return;
 
-  const token = automation.user.integrations.find(
+  const instagramIntegration = automation.user.integrations.find(
     (integration) => integration.name === "INSTAGRAM",
-  )?.token;
+  );
 
-  if (!token) return;
+  if (!instagramIntegration || instagramIntegration.status !== "ACTIVE") return;
+  const token = instagramIntegration.token;
+  const integrationId = instagramIntegration.id;
 
-  if (automation.listeners.listener === "SMARTAI") {
-    const response = await openaiClient.responses.create({
-      model: "gpt-4o-mini",
-      input: `
-      Instruções: ${automation.listeners.prompt}
-      Mensagem do usuário: "${event.text}"
-      Responda em até 2 frases.
-      `,
-    });
+  try {
+    if (automation.listeners.listener === "SMARTAI") {
+      const response = await openaiClient.responses.create({
+        model: "gpt-4o-mini",
+        input: `
+        Instruções: ${automation.listeners.prompt}
+        Mensagem do usuário: "${event.text}"
+        Responda em até 2 frases.
+        `,
+      });
 
-    if (response.output_text) {
-      const chunks = splitText(response.output_text, 1000);
+      if (response.output_text) {
+        const chunks = splitText(response.output_text, 1000);
 
+        await sendPrivateMessage(
+          event.accountId,
+          event.commentId,
+          chunks[0],
+          token,
+        );
+
+        if (chunks.length > 1) {
+          for (let i = 1; i < chunks.length; i++) {
+            await sendDM(event.accountId, event.fromId, chunks[i], token);
+          }
+        }
+      }
+
+      if (automation.listeners.commentReply) {
+        await sendCommentReply(
+          event.commentId,
+          automation.listeners.commentReply,
+          token,
+        );
+      }
+
+      return;
+    }
+
+    const chunks = splitText(automation.listeners.prompt, 1000);
+
+    await sendPrivateMessage(
+      event.accountId,
+      event.commentId,
+      chunks[0],
+      token,
+    );
+
+    for (let i = 1; i < chunks.length; i++) {
       await sendPrivateMessage(
         event.accountId,
         event.commentId,
-        chunks[0],
+        chunks[i],
         token,
       );
-
-      if (chunks.length > 1) {
-        for (let i = 1; i < chunks.length; i++) {
-          await sendDM(event.accountId, event.fromId, chunks[i], token);
-        }
-      }
     }
 
     if (automation.listeners.commentReply) {
@@ -82,41 +115,10 @@ export async function handleComment(event: NormalizedEvent) {
         token,
       );
     }
-
-    return;
-  }
-
-  console.log("Datas", {
-    accountId: event.accountId,
-    commentId: event.commentId,
-    prompt: automation.listeners.prompt,
-    token,
-  });
-
-  const chunks = splitText(automation.listeners.prompt, 1000);
-
-  await sendPrivateMessage(event.accountId, event.commentId, chunks[0], token);
-
-  for (let i = 1; i < chunks.length; i++) {
-    await sendPrivateMessage(
-      event.accountId,
-      event.commentId,
-      chunks[i],
-      token,
-    );
-  }
-
-  // if (chunks.length > 1) {
-  //   for (let i = 1; i < chunks.length; i++) {
-  //     await sendDM(event.accountId, event.fromId, chunks[i], token);
-  //   }
-  // }
-
-  if (automation.listeners.commentReply) {
-    await sendCommentReply(
-      event.commentId,
-      automation.listeners.commentReply,
-      token,
-    );
+  } catch (err) {
+    const handled = await handleTokenError(err, integrationId);
+    if (!handled) {
+      console.error("[webhook/comment] erro ao processar evento", err);
+    }
   }
 }

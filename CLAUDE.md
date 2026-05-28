@@ -10,13 +10,14 @@ Comments App — a Next.js 16 SaaS that connects to Instagram via OAuth and runs
 
 Package manager is **pnpm** (Node >= 22).
 
-- `pnpm dev` — Next dev server (with React Compiler enabled in `next.config.ts`)
+- `pnpm dev` — Next dev server, bound to `127.0.0.1:3001` (not the default `0.0.0.0:3000`); React Compiler is enabled in `next.config.ts`
 - `pnpm build` — runs `prisma generate && prisma migrate deploy && next build`
 - `pnpm lint` — Biome check (lint + format check)
 - `pnpm format` — Biome format write
 - `pnpm db:migrate` — `prisma migrate dev` (create & apply a new migration locally)
 - `pnpm db:generate` — regenerate Prisma client into `src/generated/prisma`
 - `pnpm db:studio` — Prisma Studio
+- `pnpm inngest:dev` — local Inngest dev server (required to exercise background functions; pairs with the Next dev server)
 
 There is no test suite configured.
 
@@ -63,6 +64,10 @@ All feature routers are composed in `src/trpc/routers/_app.ts` into `appRouter`.
 4. `routeEvent(event)` (`features/webhook/router.ts`) dispatches to `handler/message.handler.ts` or `handler/comment.handler.ts`.
 
 When changing webhook behavior, preserve the idempotency check — duplicate Meta deliveries will otherwise double-send replies.
+
+### Background jobs (Inngest)
+
+`src/inngest/client.ts` defines the Inngest client; functions live in `src/inngest/functions.ts` and are served from `src/app/api/inngest/route.ts`. Events are dispatched via `inngest.send({ name, data })` (see `src/app/(public)/test-inngest/actions.ts` for a reference trigger). Run `pnpm inngest:dev` alongside `pnpm dev` to execute functions locally — without it, sent events accumulate but never run.
 
 ### Database
 
