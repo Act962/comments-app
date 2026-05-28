@@ -187,6 +187,18 @@ model Listerner {
   commentReply String?
   dmCount      Int         @default(0)
   commentCount Int         @default(0)
+  buttons      MessageButton[]
+}
+
+model MessageButton {
+  id         String    @id @default(cuid())
+  listenerId String
+  listener   Listerner @relation(fields: [listenerId], references: [id], onDelete: Cascade)
+  order      Int       @default(0)
+  title      String
+  url        String
+
+  @@index([listenerId])
 }
 
 model Trigger {

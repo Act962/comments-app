@@ -55,11 +55,16 @@ export async function handleMessageEvent(event: NormalizedEvent) {
     }
 
     if (automation.listeners.listener === "MESSAGE") {
+      const buttons = automation.listeners.buttons?.map((b) => ({
+        title: b.title,
+        url: b.url,
+      }));
       await sendDM(
         event.accountId,
         event.fromId,
         automation.listeners.prompt,
         token,
+        buttons,
       );
     }
   } catch (err) {

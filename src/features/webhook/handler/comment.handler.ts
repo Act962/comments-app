@@ -91,12 +91,18 @@ export async function handleComment(event: NormalizedEvent) {
     }
 
     const chunks = splitText(automation.listeners.prompt, 1000);
+    const buttons = automation.listeners.buttons?.map((b) => ({
+      title: b.title,
+      url: b.url,
+    }));
+    const lastIndex = chunks.length - 1;
 
     await sendPrivateMessage(
       event.accountId,
       event.commentId,
       chunks[0],
       token,
+      lastIndex === 0 ? buttons : undefined,
     );
 
     for (let i = 1; i < chunks.length; i++) {
@@ -105,6 +111,7 @@ export async function handleComment(event: NormalizedEvent) {
         event.commentId,
         chunks[i],
         token,
+        i === lastIndex ? buttons : undefined,
       );
     }
 
