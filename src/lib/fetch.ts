@@ -1,6 +1,7 @@
 "use server";
 
 import axios from "axios";
+import { truncateToBytes } from "@/lib/utils";
 export type InstagramTokenResponse = {
   access_token: string;
   token_type?: string;
@@ -29,7 +30,7 @@ const buildMessagePayload = (text: string, buttons?: MessageButton[]) => {
       type: "template",
       payload: {
         template_type: "button",
-        text: text.slice(0, 640),
+        text: truncateToBytes(text, 640),
         buttons: buttons.slice(0, 3).map((b) => ({
           type: "web_url",
           url: b.url,
