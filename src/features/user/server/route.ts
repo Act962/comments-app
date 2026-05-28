@@ -1,9 +1,10 @@
-import { InstagramPostProps } from "@/features/automations/types";
-import prisma from "@/lib/db";
-import { generateTokens, refresshToken } from "@/lib/fetch";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import type { InstagramPostProps } from "@/features/automations/types";
+import prisma from "@/lib/db";
+import { generateTokens, refreshToken } from "@/lib/fetch";
+import { instagramFetch } from "@/lib/instagram-api";
+import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 
 export const userRouter = createTRPCRouter({
   updateProfile: protectedProcedure
@@ -42,37 +43,26 @@ export const userRouter = createTRPCRouter({
       });
     }
 
-    if (user.integrations.length > 0) {
-      const today = new Date();
-      const time_left =
-        user.integrations[0].expiresAt?.getTime()! - today.getTime();
+    const integration = user.integrations.find(
+      (i) => i.name === "INSTAGRAM" && i.status === "ACTIVE",
+    );
+    if (!integration) return user;
 
-      const days = Math.floor(time_left / (1000 * 3600 * 24));
+    const ageMs = Date.now() - integration.createdAt.getTime();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    if (ageMs < oneDayMs) return user;
 
-      if (days < 5) {
-        const refresh = await refresshToken(user.integrations[0].token);
+    const refreshed = await refreshToken(integration.token);
 
-        const today = new Date();
-        const expiresAt = today.setDate(today.getDate() + 60);
-
-        const update_token = await prisma.integration.update({
-          where: {
-            id: user.integrations[0].id,
-          },
-          data: {
-            token: refresh.access_token,
-            expiresAt: new Date(expiresAt),
-          },
-        });
-
-        if (!update_token) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to update token",
-          });
-        }
-      }
-    }
+    await prisma.integration.update({
+      where: { id: integration.id },
+      data: {
+        token: refreshed.access_token,
+        expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
+        lastRefreshedAt: new Date(),
+        lastRefreshError: null,
+      },
+    });
 
     return user;
   }),
@@ -97,16 +87,43 @@ export const userRouter = createTRPCRouter({
         (integration) => integration.name === "INSTAGRAM",
       );
 
+      if (!instagram) {
+        return {
+          items: [],
+          nextCursor: undefined as string | undefined,
+          status: 200,
+          needsReconnect: false,
+        };
+      }
+
+      if (instagram.status === "NEEDS_RECONNECT") {
+        return {
+          items: [],
+          nextCursor: undefined as string | undefined,
+          status: 401,
+          needsReconnect: true,
+        };
+      }
+
       const url =
         input.cursor ||
-        `${process.env.INSTAGRAM_BASE_URL}/me/media?fields=id,caption,media_url,media_type,timestamp&limit=10&access_token=${instagram?.token}`;
+        `${process.env.INSTAGRAM_BASE_URL}/me/media?fields=id,caption,media_url,media_type,timestamp&limit=10&access_token=${instagram.token}`;
 
-      const posts = await fetch(url);
+      const result = await instagramFetch<{
+        data?: unknown;
+        paging?: { next?: unknown };
+      }>(instagram.id, url);
 
-      const parsed: unknown = await posts.json();
-      const parsedObj = parsed as { data?: unknown; paging?: { next?: unknown } } | null;
+      if (!result.ok) {
+        return {
+          items: [],
+          nextCursor: undefined as string | undefined,
+          status: result.status,
+          needsReconnect: result.authError,
+        };
+      }
 
-      const rawItems = Array.isArray(parsedObj?.data) ? parsedObj?.data : [];
+      const rawItems = Array.isArray(result.data?.data) ? result.data.data : [];
       const items = rawItems.filter((item): item is InstagramPostProps => {
         if (!item || typeof item !== "object") return false;
         const obj = item as Partial<InstagramPostProps>;
@@ -122,10 +139,10 @@ export const userRouter = createTRPCRouter({
       return {
         items,
         nextCursor:
-          typeof parsedObj?.paging?.next === "string"
-            ? parsedObj.paging.next
+          typeof result.data?.paging?.next === "string"
+            ? result.data.paging.next
             : undefined,
-        status: posts.status,
+        status: result.status,
       };
     }),
   onIntegration: protectedProcedure
@@ -135,7 +152,7 @@ export const userRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const integration = await prisma.user.findUnique({
+      const user = await prisma.user.findUnique({
         where: {
           id: ctx.auth.user.id,
         },
@@ -148,43 +165,64 @@ export const userRouter = createTRPCRouter({
         },
       });
 
-      if (integration && integration.integrations.length === 0) {
-        const token = await generateTokens(input.code);
-
-        if (token) {
-          const get_insta_id = await fetch(
-            `${process.env.INSTAGRAM_BASE_URL}/me?fields=user_id&access_token=${token}`,
-          );
-
-          const instaId = await get_insta_id.json();
-
-          const today = new Date();
-          const expire_date = today.setDate(today.getDate() + 60);
-          const create = await prisma.user.update({
-            where: {
-              id: ctx.auth.user.id,
-            },
-            data: {
-              integrations: {
-                create: {
-                  token,
-                  expiresAt: new Date(expire_date),
-                  instagramId: instaId.user_id,
-                },
-              },
-            },
-            select: {
-              name: true,
-            },
-          });
-
-          return create;
-        }
+      if (!user) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
       }
 
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Error on integration",
-      });
+      const existing = user.integrations[0];
+      if (existing && existing.status === "ACTIVE") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Instagram já está conectado",
+        });
+      }
+
+      const tokenResult = await generateTokens(input.code);
+      if (!tokenResult) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Falha ao obter token do Instagram",
+        });
+      }
+
+      const get_insta_id = await fetch(
+        `${process.env.INSTAGRAM_BASE_URL}/me?fields=user_id&access_token=${tokenResult.access_token}`,
+      );
+      const instaId = await get_insta_id.json();
+
+      const expiresAt = new Date(Date.now() + tokenResult.expires_in * 1000);
+
+      if (existing) {
+        await prisma.integration.update({
+          where: { id: existing.id },
+          data: {
+            token: tokenResult.access_token,
+            expiresAt,
+            instagramId: instaId.user_id,
+            status: "ACTIVE",
+            lastRefreshedAt: new Date(),
+            lastRefreshError: null,
+          },
+        });
+      } else {
+        await prisma.user.update({
+          where: { id: ctx.auth.user.id },
+          data: {
+            integrations: {
+              create: {
+                token: tokenResult.access_token,
+                expiresAt,
+                instagramId: instaId.user_id,
+                lastRefreshedAt: new Date(),
+              },
+            },
+          },
+        });
+      }
+
+      return { name: user.name };
     }),
 });

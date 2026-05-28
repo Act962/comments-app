@@ -119,17 +119,25 @@ model Verification {
 }
 
 model Integration {
-  id          String       @id @default(cuid())
-  name        INTEGRATIONS @default(INSTAGRAM)
-  token       String       @unique
-  instagramId String?      @unique
-  expiresAt   DateTime?
-  createdAt   DateTime     @default(now())
+  id               String            @id @default(cuid())
+  name             INTEGRATIONS      @default(INSTAGRAM)
+  token            String            @unique
+  instagramId      String?           @unique
+  expiresAt        DateTime?
+  status           IntegrationStatus @default(ACTIVE)
+  lastRefreshedAt  DateTime?
+  lastRefreshError String?
+  createdAt        DateTime          @default(now())
 
   userId String?
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("integration")
+}
+
+enum IntegrationStatus {
+  ACTIVE
+  NEEDS_RECONNECT
 }
 
 model Automation {
