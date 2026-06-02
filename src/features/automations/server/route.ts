@@ -1,10 +1,8 @@
-import prisma from "@/lib/db";
-import {
-  createTRPCRouter,
-  protectedOrgProcedure,
-} from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
+import prisma from "@/lib/db";
+import { instagramFetch } from "@/lib/instagram-api";
+import { createTRPCRouter, protectedOrgProcedure } from "@/trpc/init";
 
 async function ensureAutomationInOrg(
   automationId: string,
@@ -232,7 +230,7 @@ export const automationsRouter = createTRPCRouter({
         });
       }
 
-     /*  if (post.automation?.posts.length === 1) {
+      /*  if (post.automation?.posts.length === 1) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Automação precisa de pelo menos 1 post",
@@ -244,6 +242,58 @@ export const automationsRouter = createTRPCRouter({
           id: input.id,
         },
       });
+    }),
+  refreshPostMedia: protectedOrgProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const automation = await prisma.automation.findUnique({
+        where: { id: input.id, organizationId: ctx.organizationId },
+        include: { posts: true },
+      });
+
+      if (!automation || automation.posts.length === 0) {
+        return { refreshed: 0 };
+      }
+
+      const integration = await prisma.integration.findFirst({
+        where: {
+          organizationId: ctx.organizationId,
+          name: "INSTAGRAM",
+          status: "ACTIVE",
+        },
+      });
+
+      if (!integration) return { refreshed: 0 };
+
+      const results = await Promise.allSettled(
+        automation.posts.map(async (post) => {
+          const url = `${process.env.INSTAGRAM_BASE_URL}/${post.postId}?fields=media_url,media_type,caption&access_token=${integration.token}`;
+          const result = await instagramFetch<{
+            media_url?: string;
+            media_type?: "IMAGE" | "VIDEO" | "CAROUSEL_ALBUM";
+            caption?: string;
+          }>(integration.id, url);
+
+          if (!result.ok || !result.data?.media_url) return false;
+          if (result.data.media_url === post.media) return false;
+
+          await prisma.post.update({
+            where: { id: post.id },
+            data: {
+              media: result.data.media_url,
+              mediaType: result.data.media_type ?? post.mediaType,
+              caption: result.data.caption ?? post.caption,
+            },
+          });
+          return true;
+        }),
+      );
+
+      const refreshed = results.filter(
+        (r) => r.status === "fulfilled" && r.value === true,
+      ).length;
+
+      return { refreshed };
     }),
   updateIntegrationToken: protectedOrgProcedure
     .input(
