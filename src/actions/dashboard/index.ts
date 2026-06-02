@@ -13,18 +13,33 @@ export async function getDashboardStats() {
     throw new Error("Unauthorized");
   }
 
-  const userId = session.user.id;
+  const organizationId =
+    (session.session as { activeOrganizationId?: string | null })
+      .activeOrganizationId ?? null;
+
+  if (!organizationId) {
+    return {
+      totalAutomations: 0,
+      activeAutomations: 0,
+      totalDMs: 0,
+      totalComments: 0,
+      aiResponses: 0,
+      standardResponses: 0,
+      chartData: [],
+      recentActivity: [],
+    };
+  }
 
   const [totalAutomations, activeAutomations, automationData] =
     await Promise.all([
       prisma.automation.count({
-        where: { userId },
+        where: { organizationId },
       }),
       prisma.automation.count({
-        where: { userId, active: true },
+        where: { organizationId, active: true },
       }),
       prisma.automation.findMany({
-        where: { userId },
+        where: { organizationId },
         select: {
           listeners: {
             select: {
@@ -72,7 +87,7 @@ export async function getDashboardStats() {
 
   const historyData = await prisma.history.findMany({
     where: {
-      userId,
+      organizationId,
       date: {
         gte: sevenDaysAgo,
       },
@@ -114,7 +129,7 @@ export async function getDashboardStats() {
   const recentActivity = await prisma.dms.findMany({
     where: {
       automation: {
-        userId,
+        organizationId,
       },
     },
     take: 5,

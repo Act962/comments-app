@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import prisma from "@/lib/db";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { createTRPCRouter, protectedOrgProcedure } from "@/trpc/init";
 import { backfillCommentsFromInstagram } from "./comments-collector";
 import { performDraw, performReplaceWinner } from "./draw-engine";
 import type { SorteioDetail, SorteioListItem } from "./types";
@@ -27,9 +27,9 @@ function slugify(input: string) {
   return `${base || "sorteio"}-${suffix}`;
 }
 
-async function ensureOwnership(sorteioId: string, userId: string) {
+async function ensureOrgOwnership(sorteioId: string, organizationId: string) {
   const sorteio = await prisma.sorteio.findFirst({
-    where: { id: sorteioId, userId },
+    where: { id: sorteioId, organizationId },
   });
   if (!sorteio) {
     throw new TRPCError({
@@ -41,12 +41,13 @@ async function ensureOwnership(sorteioId: string, userId: string) {
 }
 
 export const sorteioRouter = createTRPCRouter({
-  create: protectedProcedure
+  create: protectedOrgProcedure
     .input(z.object({ title: z.string().min(1).max(120) }))
     .mutation(async ({ ctx, input }): Promise<{ id: string; slug: string }> => {
       const created = await prisma.sorteio.create({
         data: {
           userId: ctx.auth.user.id,
+          organizationId: ctx.organizationId,
           title: input.title,
           slug: slugify(input.title),
         },
@@ -55,9 +56,9 @@ export const sorteioRouter = createTRPCRouter({
       return created;
     }),
 
-  getMany: protectedProcedure.query(async ({ ctx }) => {
+  getMany: protectedOrgProcedure.query(async ({ ctx }) => {
     return (await prisma.sorteio.findMany({
-      where: { userId: ctx.auth.user.id },
+      where: { organizationId: ctx.organizationId },
       orderBy: { createdAt: "desc" },
       include: {
         _count: { select: { comments: true, posts: true, winners: true } },
@@ -65,11 +66,11 @@ export const sorteioRouter = createTRPCRouter({
     })) as SorteioListItem[];
   }),
 
-  getOne: protectedProcedure
+  getOne: protectedOrgProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }): Promise<SorteioDetail> => {
       const sorteio = await prisma.sorteio.findFirst({
-        where: { id: input.id, userId: ctx.auth.user.id },
+        where: { id: input.id, organizationId: ctx.organizationId },
         include: {
           posts: true,
           winners: {
@@ -90,7 +91,7 @@ export const sorteioRouter = createTRPCRouter({
       return sorteio as unknown as SorteioDetail;
     }),
 
-  update: protectedProcedure
+  update: protectedOrgProcedure
     .input(
       z.object({
         id: z.string(),
@@ -103,7 +104,7 @@ export const sorteioRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }): Promise<{ id: string }> => {
-      await ensureOwnership(input.id, ctx.auth.user.id);
+      await ensureOrgOwnership(input.id, ctx.organizationId);
 
       const { id, rules, ...rest } = input;
 
@@ -117,15 +118,15 @@ export const sorteioRouter = createTRPCRouter({
       return { id };
     }),
 
-  delete: protectedProcedure
+  delete: protectedOrgProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }): Promise<{ id: string }> => {
-      await ensureOwnership(input.id, ctx.auth.user.id);
+      await ensureOrgOwnership(input.id, ctx.organizationId);
       await prisma.sorteio.delete({ where: { id: input.id } });
       return { id: input.id };
     }),
 
-  addPosts: protectedProcedure
+  addPosts: protectedOrgProcedure
     .input(
       z.object({
         id: z.string(),
@@ -142,7 +143,7 @@ export const sorteioRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ensureOwnership(input.id, ctx.auth.user.id);
+      await ensureOrgOwnership(input.id, ctx.organizationId);
 
       await prisma.sorteioPost.createMany({
         data: input.posts.map((post) => ({
@@ -155,20 +156,20 @@ export const sorteioRouter = createTRPCRouter({
       return { sorteioId: input.id };
     }),
 
-  removePost: protectedProcedure
+  removePost: protectedOrgProcedure
     .input(z.object({ id: z.string(), postId: z.string() }))
     .mutation(async ({ ctx, input }): Promise<{ count: number }> => {
-      await ensureOwnership(input.id, ctx.auth.user.id);
+      await ensureOrgOwnership(input.id, ctx.organizationId);
       const result = await prisma.sorteioPost.deleteMany({
         where: { sorteioId: input.id, postId: input.postId },
       });
       return { count: result.count };
     }),
 
-  startCollecting: protectedProcedure
+  startCollecting: protectedOrgProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const sorteio = await ensureOwnership(input.id, ctx.auth.user.id);
+      const sorteio = await ensureOrgOwnership(input.id, ctx.organizationId);
 
       const postCount = await prisma.sorteioPost.count({
         where: { sorteioId: sorteio.id },
@@ -189,10 +190,10 @@ export const sorteioRouter = createTRPCRouter({
       return stats;
     }),
 
-  closeCollecting: protectedProcedure
+  closeCollecting: protectedOrgProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }): Promise<{ id: string }> => {
-      await ensureOwnership(input.id, ctx.auth.user.id);
+      await ensureOrgOwnership(input.id, ctx.organizationId);
       await prisma.sorteio.update({
         where: { id: input.id },
         data: { status: "CLOSED" },
@@ -200,14 +201,14 @@ export const sorteioRouter = createTRPCRouter({
       return { id: input.id };
     }),
 
-  resync: protectedProcedure
+  resync: protectedOrgProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await ensureOwnership(input.id, ctx.auth.user.id);
+      await ensureOrgOwnership(input.id, ctx.organizationId);
       return await backfillCommentsFromInstagram(input.id);
     }),
 
-  listComments: protectedProcedure
+  listComments: protectedOrgProcedure
     .input(
       z.object({
         id: z.string(),
@@ -216,7 +217,7 @@ export const sorteioRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      await ensureOwnership(input.id, ctx.auth.user.id);
+      await ensureOrgOwnership(input.id, ctx.organizationId);
 
       const items = await prisma.sorteioComment.findMany({
         where: { sorteioId: input.id },
@@ -249,7 +250,7 @@ export const sorteioRouter = createTRPCRouter({
       };
     }),
 
-  draw: protectedProcedure
+  draw: protectedOrgProcedure
     .input(
       z.object({
         id: z.string(),
@@ -257,14 +258,14 @@ export const sorteioRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ensureOwnership(input.id, ctx.auth.user.id);
+      await ensureOrgOwnership(input.id, ctx.organizationId);
       return performDraw(input.id, input.count);
     }),
 
-  replaceWinner: protectedProcedure
+  replaceWinner: protectedOrgProcedure
     .input(z.object({ id: z.string(), winnerId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await ensureOwnership(input.id, ctx.auth.user.id);
+      await ensureOrgOwnership(input.id, ctx.organizationId);
       return performReplaceWinner(input.id, input.winnerId);
     }),
 });

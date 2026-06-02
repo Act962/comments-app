@@ -1,22 +1,42 @@
 import prisma from "@/lib/db";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import {
+  createTRPCRouter,
+  protectedOrgProcedure,
+} from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 
+async function ensureAutomationInOrg(
+  automationId: string,
+  organizationId: string,
+) {
+  const automation = await prisma.automation.findFirst({
+    where: { id: automationId, organizationId },
+    select: { id: true },
+  });
+  if (!automation) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Automação não encontrada",
+    });
+  }
+}
+
 export const automationsRouter = createTRPCRouter({
-  create: protectedProcedure
+  create: protectedOrgProcedure
     .input(z.object({ name: z.string() }))
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx }) => {
       return await prisma.automation.create({
         data: {
           userId: ctx.auth.user.id,
+          organizationId: ctx.organizationId,
         },
       });
     }),
-  getMany: protectedProcedure.query(async ({ ctx }) => {
+  getMany: protectedOrgProcedure.query(async ({ ctx }) => {
     return await prisma.automation.findMany({
       where: {
-        userId: ctx.auth.user.id,
+        organizationId: ctx.organizationId,
       },
       orderBy: {
         createdAt: "desc",
@@ -27,13 +47,13 @@ export const automationsRouter = createTRPCRouter({
       },
     });
   }),
-  getOne: protectedProcedure
+  getOne: protectedOrgProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       return await prisma.automation.findUnique({
         where: {
           id: input.id,
-          userId: ctx.auth.user.id,
+          organizationId: ctx.organizationId,
         },
         include: {
           keywords: true,
@@ -48,17 +68,17 @@ export const automationsRouter = createTRPCRouter({
         },
       });
     }),
-  delete: protectedProcedure
+  delete: protectedOrgProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return await prisma.automation.delete({
         where: {
           id: input.id,
-          userId: ctx.auth.user.id,
+          organizationId: ctx.organizationId,
         },
       });
     }),
-  updateName: protectedProcedure
+  updateName: protectedOrgProcedure
     .input(
       z.object({
         id: z.string(),
@@ -66,6 +86,8 @@ export const automationsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await ensureAutomationInOrg(input.id, ctx.organizationId);
+
       const automation = await prisma.automation.update({
         where: {
           id: input.id,
@@ -84,7 +106,7 @@ export const automationsRouter = createTRPCRouter({
 
       return automation;
     }),
-  updateActive: protectedProcedure
+  updateActive: protectedOrgProcedure
     .input(
       z.object({
         id: z.string(),
@@ -95,7 +117,7 @@ export const automationsRouter = createTRPCRouter({
       const automation = await prisma.automation.findUnique({
         where: {
           id: input.id,
-          userId: ctx.auth.user.id,
+          organizationId: ctx.organizationId,
         },
         include: {
           keywords: true,
@@ -146,7 +168,7 @@ export const automationsRouter = createTRPCRouter({
 
       return updateAutomation;
     }),
-  savePost: protectedProcedure
+  savePost: protectedOrgProcedure
     .input(
       z.object({
         automationId: z.string(),
@@ -160,7 +182,9 @@ export const automationsRouter = createTRPCRouter({
         ),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await ensureAutomationInOrg(input.automationId, ctx.organizationId);
+
       await prisma.post.createMany({
         data: input.posts.map((post) => ({
           ...post,
@@ -172,20 +196,22 @@ export const automationsRouter = createTRPCRouter({
         automationId: input.automationId,
       };
     }),
-  deletePost: protectedProcedure
+  deletePost: protectedOrgProcedure
     .input(
       z.object({
         id: z.string(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const post = await prisma.post.findUnique({
         where: {
           id: input.id,
         },
         include: {
           automation: {
-            include: {
+            select: {
+              id: true,
+              organizationId: true,
               posts: true,
             },
           },
@@ -196,6 +222,13 @@ export const automationsRouter = createTRPCRouter({
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Post não encontrado",
+        });
+      }
+
+      if (post.automation?.organizationId !== ctx.organizationId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Sem acesso a este post",
         });
       }
 
@@ -212,7 +245,7 @@ export const automationsRouter = createTRPCRouter({
         },
       });
     }),
-  updateIntegrationToken: protectedProcedure
+  updateIntegrationToken: protectedOrgProcedure
     .input(
       z.object({
         id: z.string(),
@@ -221,6 +254,17 @@ export const automationsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const existing = await prisma.integration.findFirst({
+        where: { id: input.id, organizationId: ctx.organizationId },
+        select: { id: true },
+      });
+      if (!existing) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Integração não encontrada",
+        });
+      }
+
       const integration = await prisma.integration.update({
         where: {
           id: input.id,

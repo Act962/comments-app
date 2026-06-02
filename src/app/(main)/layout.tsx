@@ -1,5 +1,3 @@
-import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { requireAuth } from "@/lib/auth-utils";
 import React from "react";
 
@@ -10,10 +8,5 @@ export default async function Layout({
 }) {
   await requireAuth();
 
-  return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>{children}</SidebarInset>
-    </SidebarProvider>
-  );
+  return <>{children}</>;
 }

@@ -1,27 +1,15 @@
 import prisma from "@/lib/db";
 
-// export const matchKeyword = async (keyword: string, userId: string) => {
-//   return await prisma.keyword.findFirst({
-//     where: {
-//       word: {
-//         equals: keyword,
-//         mode: "insensitive",
-//       },
-//       automation: {
-//         active: true,
-//         userId,
-//       },
-//     },
-//   });
-// };
-
-export const matchKeyword = async (keyword: string, userId: string) => {
-  // Busca keywords ativas do usuário
+export const matchKeyword = async (
+  keyword: string,
+  organizationId: string,
+) => {
+  // Busca keywords ativas da empresa
   const keywords = await prisma.keyword.findMany({
     where: {
       automation: {
         active: true,
-        userId,
+        organizationId,
       },
     },
     include: {
@@ -70,7 +58,7 @@ export const getKeywordAutomation = async (
           buttons: { orderBy: { order: "asc" } },
         },
       },
-      user: {
+      organization: {
         select: {
           integrations: true,
         },
@@ -85,37 +73,34 @@ export const trackResponse = async (
 ) => {
   const automation = await prisma.automation.findUnique({
     where: { id: automationId, active: true },
-    select: { userId: true },
+    select: { organizationId: true, userId: true },
   });
 
-  if (!automation) return;
+  if (!automation?.organizationId) return;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const existing = await prisma.history.findFirst({
+    where: {
+      organizationId: automation.organizationId,
+      date: today,
+      type,
+    },
+  });
+
   await prisma.history.upsert({
     where: {
-      // Since we don't have a unique constraint on (userId, date, type) in the schema yet,
-      // and date contains time, we'll find existing or create.
-      // Actually, let's use a findFirst and update or create to keep it simple without schema changes.
-      id:
-        (
-          await prisma.history.findFirst({
-            where: {
-              userId: automation.userId,
-              date: today,
-              type: type,
-            },
-          })
-        )?.id || "new-id",
+      id: existing?.id || "new-id",
     },
     update: {
       count: { increment: 1 },
     },
     create: {
+      organizationId: automation.organizationId,
       userId: automation.userId,
       date: today,
-      type: type,
+      type,
       count: 1,
     },
   });
@@ -162,7 +147,7 @@ export const getIntegration = async (accountId: string) => {
       instagramId: accountId,
     },
     select: {
-      userId: true,
+      organizationId: true,
     },
   });
 };

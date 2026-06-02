@@ -6,27 +6,24 @@ import {
   ChevronsUpDownIcon,
   CircleQuestionMarkIcon,
   GiftIcon,
-  Home,
   HomeIcon,
   LaptopIcon,
   LogOutIcon,
   MoonIcon,
   PaletteIcon,
   RocketIcon,
-  SettingsIcon,
   SunIcon,
-  UserIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect } from "react";
+import { EmpresaSwitcher } from "@/features/organization/components/empresa-switcher";
 import {
   useCurrentSubscription,
   useUpgradeSubscription,
 } from "@/features/subscription/hook/use-subscription";
 import { authClient } from "@/lib/auth-client";
-import { AppLogo } from "./app-logo";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
@@ -62,8 +59,6 @@ const menuItems = [
   { title: "Automações", url: "/workflows", icon: ActivityIcon },
   { title: "Sorteios", url: "/sorteios", icon: GiftIcon },
   { title: "Integrações", url: "/integrations", icon: RocketIcon },
-  { title: "Configurações", url: "/settings", icon: SettingsIcon },
-  { title: "Ajuda", url: "/help", icon: CircleQuestionMarkIcon },
 ];
 
 export function AppSidebar() {
@@ -78,43 +73,13 @@ export function AppSidebar() {
   return (
     <Sidebar variant="floating">
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton className="h-16">
-              <div className="relative w-full">
-                <AppLogo />
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <EmpresaSwitcher />
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.slice(0, 4).map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      isActive={pathname.startsWith(item.url)}
-                      asChild
-                    >
-                      <Link href={item.url}>
-                        <Icon />
-                        {item.title}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.slice(4).map((item, index) => {
+              {menuItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <SidebarMenuItem key={item.title}>
@@ -326,6 +291,13 @@ export function NavUser() {
                 <Link href={"/settings?tab=notifications"}>
                   <BellIcon />
                   Notificações
+                </Link>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem className="cursor-pointer" asChild>
+                <Link href={"/help"}>
+                  <CircleQuestionMarkIcon />
+                  Ajuda
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>

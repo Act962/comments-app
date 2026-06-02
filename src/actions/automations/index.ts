@@ -11,7 +11,7 @@ export const findAutomation = async (id: string) => {
       keywords: true,
       listeners: true,
       triggers: true,
-      user: {
+      organization: {
         select: {
           integrations: true,
         },

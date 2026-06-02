@@ -1,17 +1,35 @@
 import prisma from "@/lib/db";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { createTRPCRouter, protectedOrgProcedure } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 
+async function ensureAutomationInOrg(
+  automationId: string,
+  organizationId: string,
+) {
+  const automation = await prisma.automation.findFirst({
+    where: { id: automationId, organizationId },
+    select: { id: true },
+  });
+  if (!automation) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Automação não encontrada",
+    });
+  }
+}
+
 export const keywordRouter = createTRPCRouter({
-  create: protectedProcedure
+  create: protectedOrgProcedure
     .input(
       z.object({
         keyword: z.string(),
         automationId: z.string(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await ensureAutomationInOrg(input.automationId, ctx.organizationId);
+
       const keyword = await prisma.keyword.findFirst({
         where: {
           word: {
@@ -34,14 +52,16 @@ export const keywordRouter = createTRPCRouter({
         },
       });
     }),
-  delete: protectedProcedure
+  delete: protectedOrgProcedure
     .input(
       z.object({
         id: z.string(),
         automationId: z.string(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await ensureAutomationInOrg(input.automationId, ctx.organizationId);
+
       const keyword = await prisma.keyword.delete({
         where: {
           id: input.id,

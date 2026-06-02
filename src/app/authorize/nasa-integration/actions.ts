@@ -20,11 +20,19 @@ export async function approveCommentsIntegration(params: AuthorizeParams) {
     throw new Error("not_authenticated");
   }
 
+  const organizationId =
+    (session.session as { activeOrganizationId?: string | null })
+      .activeOrganizationId ?? null;
+  if (!organizationId) {
+    throw new Error("no_active_organization");
+  }
+
   const code = randomBytes(24).toString("base64url");
   await prisma.commentsIntegrationConsent.create({
     data: {
       code,
       userId: session.user.id,
+      organizationId,
       scopes: params.scopes
         .split(",")
         .map((s) => s.trim())

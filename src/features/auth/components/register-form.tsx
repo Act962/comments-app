@@ -17,7 +17,7 @@ import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -38,8 +38,16 @@ const registerSchema = z
 
 type RegisterSchema = z.infer<typeof registerSchema>;
 
+function safeRedirect(value: string | null): string {
+  if (!value) return "/dashboard";
+  if (!value.startsWith("/") || value.startsWith("//")) return "/dashboard";
+  return value;
+}
+
 export function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = safeRedirect(searchParams.get("redirect"));
   const form = useForm<RegisterSchema>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -56,13 +64,13 @@ export function RegisterForm() {
         email: data.email,
         password: data.password,
         name: data.name,
-        callbackURL: "/dashboard",
+        callbackURL: redirectTo,
       },
       {
         onSuccess: () => {
           toast.success("Conta criada com sucesso!");
           form.reset();
-          router.push("/dashboard");
+          router.push(redirectTo);
         },
         onError: () => {
           toast.error("Erro ao criar conta");
@@ -74,7 +82,7 @@ export function RegisterForm() {
   const handleGoogleLogin = async () => {
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/dashboard",
+      callbackURL: redirectTo,
     });
   };
 
@@ -177,7 +185,16 @@ export function RegisterForm() {
                 </Button>
               </Field>
               <FieldDescription className="text-center">
-                Já tem uma conta? <Link href="/login">Faça login</Link>
+                Já tem uma conta?{" "}
+                <Link
+                  href={
+                    redirectTo === "/dashboard"
+                      ? "/login"
+                      : `/login?redirect=${encodeURIComponent(redirectTo)}`
+                  }
+                >
+                  Faça login
+                </Link>
               </FieldDescription>
             </FieldGroup>
           </form>
