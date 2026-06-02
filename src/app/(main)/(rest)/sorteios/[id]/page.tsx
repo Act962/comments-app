@@ -3,7 +3,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { EntityContainer } from "@/components/entity-components";
 import { SorteioEditor } from "@/features/sorteio/components/sorteio-editor";
 import { prefetchSorteio } from "@/features/sorteio/server/prefetch";
-import { HydrateClient } from "@/trpc/server";
+import { caller, HydrateClient } from "@/trpc/server";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -11,6 +11,7 @@ type Props = {
 
 export default async function SorteioDetailPage({ params }: Props) {
   const { id } = await params;
+  await caller.sorteio.refreshPostMedia({ id }).catch(() => {});
   prefetchSorteio({ id });
 
   return (

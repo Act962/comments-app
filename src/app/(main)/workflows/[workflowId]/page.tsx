@@ -1,10 +1,10 @@
+import { Suspense } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 import { Spinner } from "@/components/ui/spinner";
 import { prefetchAutomation } from "@/features/automations/server/prefetch";
 import Editor from "@/features/editor/components/editor";
 import { EditorHeader } from "@/features/editor/components/editor-header";
-import { HydrateClient } from "@/trpc/server";
-import { Suspense } from "react";
-import { ErrorBoundary } from "react-error-boundary";
+import { caller, HydrateClient } from "@/trpc/server";
 
 interface Props {
   params: Promise<{ workflowId: string }>;
@@ -12,6 +12,7 @@ interface Props {
 
 export default async function Workflow({ params }: Props) {
   const { workflowId } = await params;
+  await caller.automations.refreshPostMedia({ id: workflowId }).catch(() => {});
   prefetchAutomation({ id: workflowId });
   return (
     <HydrateClient>

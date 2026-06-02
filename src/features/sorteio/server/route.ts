@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import prisma from "@/lib/db";
+import { instagramFetch } from "@/lib/instagram-api";
 import { createTRPCRouter, protectedOrgProcedure } from "@/trpc/init";
 import { backfillCommentsFromInstagram } from "./comments-collector";
 import { performDraw, performReplaceWinner } from "./draw-engine";
@@ -154,6 +155,68 @@ export const sorteioRouter = createTRPCRouter({
       });
 
       return { sorteioId: input.id };
+    }),
+
+  refreshPostMedia: protectedOrgProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await ensureOrgOwnership(input.id, ctx.organizationId);
+
+      const posts = await prisma.sorteioPost.findMany({
+        where: { sorteioId: input.id },
+      });
+
+      if (posts.length === 0) return { refreshed: 0 };
+
+      const integration = await prisma.integration.findFirst({
+        where: {
+          organizationId: ctx.organizationId,
+          name: "INSTAGRAM",
+          status: "ACTIVE",
+        },
+      });
+
+      if (!integration) return { refreshed: 0 };
+
+      const results = await Promise.allSettled(
+        posts.map(async (post) => {
+          const url = `${process.env.INSTAGRAM_BASE_URL}/${post.postId}?fields=media_url,media_type,caption,thumbnail_url,permalink&access_token=${integration.token}`;
+          const result = await instagramFetch<{
+            media_url?: string;
+            media_type?: "IMAGE" | "VIDEO" | "CAROUSEL_ALBUM";
+            caption?: string;
+            thumbnail_url?: string;
+            permalink?: string;
+          }>(integration.id, url);
+
+          if (!result.ok || !result.data?.media_url) return false;
+
+          const nextMedia = result.data.thumbnail_url ?? result.data.media_url;
+          const nextMediaUrl = result.data.media_url;
+
+          if (nextMedia === post.media && nextMediaUrl === post.mediaUrl) {
+            return false;
+          }
+
+          await prisma.sorteioPost.update({
+            where: { id: post.id },
+            data: {
+              media: nextMedia,
+              mediaUrl: nextMediaUrl,
+              mediaType: result.data.media_type ?? post.mediaType,
+              caption: result.data.caption ?? post.caption,
+              permalink: result.data.permalink ?? post.permalink,
+            },
+          });
+          return true;
+        }),
+      );
+
+      const refreshed = results.filter(
+        (r) => r.status === "fulfilled" && r.value === true,
+      ).length;
+
+      return { refreshed };
     }),
 
   removePost: protectedOrgProcedure
