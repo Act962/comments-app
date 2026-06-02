@@ -63,6 +63,7 @@ export async function POST(request: Request) {
     prisma.commentsIntegrationKey.create({
       data: {
         userId: consent.userId,
+        organizationId: consent.organizationId,
         apiKey,
         secretCiphertext,
         scopes: consent.scopes,

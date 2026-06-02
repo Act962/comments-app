@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import type { S2SContext } from "@/lib/comments-s2s-verify";
+import prisma from "@/lib/db";
 import { initTRPC, TRPCError } from "@trpc/server";
 import { headers } from "next/headers";
 
@@ -43,6 +44,7 @@ export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
             expiresAt: new Date(now.getTime() + 60 * 60 * 1000),
             ipAddress: null,
             userAgent: "comments-app-s2s",
+            activeOrganizationId: null as string | null,
           },
           user: ctx.s2s.user,
         },
@@ -69,3 +71,43 @@ export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
     },
   });
 });
+
+export const protectedOrgProcedure = protectedProcedure.use(
+  async ({ ctx, next }) => {
+    const activeOrganizationId: string | null =
+      ctx.s2s?.organizationId ??
+      (ctx.auth.session as { activeOrganizationId?: string | null })
+        .activeOrganizationId ??
+      null;
+
+    if (!activeOrganizationId) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Selecione uma empresa",
+      });
+    }
+
+    const membership = await prisma.member.findFirst({
+      where: {
+        organizationId: activeOrganizationId,
+        userId: ctx.auth.user.id,
+      },
+      select: { id: true, role: true, organizationId: true, userId: true },
+    });
+
+    if (!membership) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Sem acesso a esta empresa",
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        organizationId: activeOrganizationId,
+        membership,
+      },
+    });
+  },
+);

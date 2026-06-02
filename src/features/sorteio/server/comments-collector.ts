@@ -30,7 +30,11 @@ export async function backfillCommentsFromInstagram(
     throw new Error(`Sorteio ${sorteioId} não encontrado`);
   }
 
-  const token = await getInstagramToken(sorteio.userId);
+  if (!sorteio.organizationId) {
+    throw new Error(`Sorteio ${sorteioId} sem empresa associada`);
+  }
+
+  const token = await getInstagramToken(sorteio.organizationId);
   const stats: BackfillStats = { perPost: [], totalUpserted: 0 };
 
   if (!token) {
@@ -135,7 +139,7 @@ export async function upsertCommentFromWebhook(params: {
       postId: params.mediaId,
       sorteio: {
         status: "COLLECTING",
-        user: {
+        organization: {
           integrations: {
             some: {
               name: "INSTAGRAM",

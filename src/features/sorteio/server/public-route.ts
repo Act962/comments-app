@@ -6,12 +6,12 @@ import { getUserMedia } from "@/lib/fetch";
 import {
   baseProcedure,
   createTRPCRouter,
-  protectedProcedure,
+  protectedOrgProcedure,
 } from "@/trpc/init";
 
 export const sorteioPublicRouter = createTRPCRouter({
-  listInstagramMedia: protectedProcedure.query(async ({ ctx }) => {
-    const integration = await getInstagramIntegration(ctx.auth.user.id);
+  listInstagramMedia: protectedOrgProcedure.query(async ({ ctx }) => {
+    const integration = await getInstagramIntegration(ctx.organizationId);
     if (!integration?.token || !integration.instagramId) {
       throw new TRPCError({
         code: "PRECONDITION_FAILED",

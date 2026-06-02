@@ -33,9 +33,9 @@ export async function handleComment(event: NormalizedEvent) {
 
   const integration = await getIntegration(event.accountId);
 
-  if (!integration || !integration.userId) return;
+  if (!integration?.organizationId) return;
 
-  const matcher = await matchKeyword(event.text, integration.userId);
+  const matcher = await matchKeyword(event.text, integration.organizationId);
 
   if (!matcher?.automationId) return;
 
@@ -47,7 +47,7 @@ export async function handleComment(event: NormalizedEvent) {
 
   if (!post) return;
 
-  const instagramIntegration = automation.user.integrations.find(
+  const instagramIntegration = automation.organization?.integrations.find(
     (integration) => integration.name === "INSTAGRAM",
   );
 

@@ -12,6 +12,7 @@ const SIGNATURE_HEADER = "x-comments-signature";
 export type S2SContext = {
   user: User;
   scopes: string[];
+  organizationId: string | null;
 };
 
 function hexEqual(a: string, b: string): boolean {
@@ -49,6 +50,7 @@ export async function verifyCommentsS2S(request: Request): Promise<S2SContext | 
     select: {
       id: true,
       userId: true,
+      organizationId: true,
       secretCiphertext: true,
       revokedAt: true,
       scopes: true,
@@ -101,5 +103,5 @@ export async function verifyCommentsS2S(request: Request): Promise<S2SContext | 
     .update({ where: { id: key.id }, data: { lastUsedAt: new Date() } })
     .catch(() => undefined);
 
-  return { user, scopes: key.scopes };
+  return { user, scopes: key.scopes, organizationId: key.organizationId };
 }

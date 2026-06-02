@@ -4,7 +4,11 @@ import type { InstagramPostProps } from "@/features/automations/types";
 import prisma from "@/lib/db";
 import { generateTokens, refreshToken } from "@/lib/fetch";
 import { instagramFetch } from "@/lib/instagram-api";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import {
+  createTRPCRouter,
+  protectedOrgProcedure,
+  protectedProcedure,
+} from "@/trpc/init";
 
 export const userRouter = createTRPCRouter({
   updateProfile: protectedProcedure
@@ -27,30 +31,21 @@ export const userRouter = createTRPCRouter({
 
       return user;
     }),
-  refreshTokens: protectedProcedure.mutation(async ({ ctx }) => {
-    const user = await prisma.user.findUnique({
+  refreshTokens: protectedOrgProcedure.mutation(async ({ ctx }) => {
+    const integration = await prisma.integration.findFirst({
       where: {
-        id: ctx.auth.user.id,
-      },
-      include: {
-        integrations: true,
+        organizationId: ctx.organizationId,
+        name: "INSTAGRAM",
+        status: "ACTIVE",
       },
     });
-    if (!user) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "User not found",
-      });
+    if (!integration) {
+      return { refreshed: false };
     }
-
-    const integration = user.integrations.find(
-      (i) => i.name === "INSTAGRAM" && i.status === "ACTIVE",
-    );
-    if (!integration) return user;
 
     const ageMs = Date.now() - integration.createdAt.getTime();
     const oneDayMs = 24 * 60 * 60 * 1000;
-    if (ageMs < oneDayMs) return user;
+    if (ageMs < oneDayMs) return { refreshed: false };
 
     const refreshed = await refreshToken(integration.token);
 
@@ -64,28 +59,21 @@ export const userRouter = createTRPCRouter({
       },
     });
 
-    return user;
+    return { refreshed: true };
   }),
-  getPosts: protectedProcedure
+  getPosts: protectedOrgProcedure
     .input(
       z.object({
         cursor: z.string().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const user = await prisma.user.findUnique({
+      const instagram = await prisma.integration.findFirst({
         where: {
-          id: ctx.auth.user.id,
-        },
-        include: {
-          integrations: true,
-          automations: true,
+          organizationId: ctx.organizationId,
+          name: "INSTAGRAM",
         },
       });
-
-      const instagram = user?.integrations.find(
-        (integration) => integration.name === "INSTAGRAM",
-      );
 
       if (!instagram) {
         return {
@@ -145,34 +133,20 @@ export const userRouter = createTRPCRouter({
         status: result.status,
       };
     }),
-  onIntegration: protectedProcedure
+  onIntegration: protectedOrgProcedure
     .input(
       z.object({
         code: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const user = await prisma.user.findUnique({
+      const existing = await prisma.integration.findFirst({
         where: {
-          id: ctx.auth.user.id,
-        },
-        include: {
-          integrations: {
-            where: {
-              name: "INSTAGRAM",
-            },
-          },
+          organizationId: ctx.organizationId,
+          name: "INSTAGRAM",
         },
       });
 
-      if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
-        });
-      }
-
-      const existing = user.integrations[0];
       if (existing && existing.status === "ACTIVE") {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -208,21 +182,18 @@ export const userRouter = createTRPCRouter({
           },
         });
       } else {
-        await prisma.user.update({
-          where: { id: ctx.auth.user.id },
+        await prisma.integration.create({
           data: {
-            integrations: {
-              create: {
-                token: tokenResult.access_token,
-                expiresAt,
-                instagramId: instaId.user_id,
-                lastRefreshedAt: new Date(),
-              },
-            },
+            userId: ctx.auth.user.id,
+            organizationId: ctx.organizationId,
+            token: tokenResult.access_token,
+            expiresAt,
+            instagramId: instaId.user_id,
+            lastRefreshedAt: new Date(),
           },
         });
       }
 
-      return { name: user.name };
+      return { name: ctx.auth.user.name };
     }),
 });

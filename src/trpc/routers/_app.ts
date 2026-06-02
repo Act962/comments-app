@@ -3,6 +3,7 @@ import { integrationRouter } from "@/features/integrations/server/route";
 import { keywordRouter } from "@/features/keyword/server/route";
 import { listenerRouter } from "@/features/listener/server/route";
 import { notificationsRouter } from "@/features/notifications/server/route";
+import { organizationRouter } from "@/features/organization/server/route";
 import { sorteioPublicRouter } from "@/features/sorteio/server/public-route";
 import { sorteioRouter } from "@/features/sorteio/server/route";
 import { subscriptionRouter } from "@/features/subscription/server/route";
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   keyword: keywordRouter,
   integration: integrationRouter,
   notifications: notificationsRouter,
+  organization: organizationRouter,
   subscription: subscriptionRouter,
   sorteio: sorteioRouter,
   sorteioPublic: sorteioPublicRouter,

@@ -5,17 +5,27 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import React from "react";
 
+function safeRedirect(value: string | string[] | undefined): string {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (!raw) return "/dashboard";
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
+  return raw;
+}
+
 export default async function AuthLayout({
   children,
+  searchParams,
 }: {
   children: React.ReactNode;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
   if (session) {
-    redirect("/dashboard");
+    const params = (await searchParams) ?? {};
+    redirect(safeRedirect(params.redirect));
   }
 
   return (

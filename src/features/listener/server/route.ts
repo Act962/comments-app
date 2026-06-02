@@ -1,5 +1,6 @@
 import prisma from "@/lib/db";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { createTRPCRouter, protectedOrgProcedure } from "@/trpc/init";
+import { TRPCError } from "@trpc/server";
 import z from "zod";
 
 const buttonSchema = z.object({
@@ -9,8 +10,24 @@ const buttonSchema = z.object({
 
 const buttonsSchema = z.array(buttonSchema).max(3, "Máximo 3 botões").optional();
 
+async function ensureAutomationInOrg(
+  automationId: string,
+  organizationId: string,
+) {
+  const automation = await prisma.automation.findFirst({
+    where: { id: automationId, organizationId },
+    select: { id: true },
+  });
+  if (!automation) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Automação não encontrada",
+    });
+  }
+}
+
 export const listenerRouter = createTRPCRouter({
-  create: protectedProcedure
+  create: protectedOrgProcedure
     .input(
       z.object({
         automationId: z.string(),
@@ -21,6 +38,8 @@ export const listenerRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await ensureAutomationInOrg(input.automationId, ctx.organizationId);
+
       const buttons = input.listener === "MESSAGE" ? input.buttons ?? [] : [];
       return await prisma.listerner.create({
         data: {
@@ -38,7 +57,7 @@ export const listenerRouter = createTRPCRouter({
         },
       });
     }),
-  update: protectedProcedure
+  update: protectedOrgProcedure
     .input(
       z.object({
         automationId: z.string(),
@@ -49,6 +68,8 @@ export const listenerRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await ensureAutomationInOrg(input.automationId, ctx.organizationId);
+
       const listener = await prisma.listerner.update({
         where: {
           automationId: input.automationId,

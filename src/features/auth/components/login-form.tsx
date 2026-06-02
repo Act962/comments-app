@@ -18,7 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 
 const loginSchema = z.object({
@@ -28,8 +28,17 @@ const loginSchema = z.object({
 
 type LoginSchema = z.infer<typeof loginSchema>;
 
+function safeRedirect(value: string | null): string {
+  // Apenas paths internos relativos. Bloqueia "//externo.com" e URLs absolutas.
+  if (!value) return "/dashboard";
+  if (!value.startsWith("/") || value.startsWith("//")) return "/dashboard";
+  return value;
+}
+
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = safeRedirect(searchParams.get("redirect"));
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -43,13 +52,13 @@ export function LoginForm() {
       {
         email: data.email,
         password: data.password,
-        callbackURL: "/dashboard",
+        callbackURL: redirectTo,
       },
       {
         onSuccess: () => {
           toast.success("Login realizado com sucesso!");
           form.reset();
-          router.push("/dashboard");
+          router.push(redirectTo);
         },
         onError: () => {
           toast.error("Erro ao fazer login");
@@ -61,7 +70,7 @@ export function LoginForm() {
   const handleGoogleLogin = async () => {
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/dashboard",
+      callbackURL: redirectTo,
     });
   };
 
@@ -93,12 +102,12 @@ export function LoginForm() {
               <Field>
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Senha</FieldLabel>
-                  <a
-                    href="#"
+                  <Link
+                    href="/forgot-password"
                     className="ml-auto text-sm underline-offset-2 hover:underline"
                   >
                     Esqueceu sua senha?
-                  </a>
+                  </Link>
                 </div>
                 <Input
                   id="password"
@@ -138,7 +147,16 @@ export function LoginForm() {
                 </Button>
               </Field>
               <FieldDescription className="text-center">
-                Não tem uma conta? <Link href="/register">Registre-se</Link>
+                Não tem uma conta?{" "}
+                <Link
+                  href={
+                    redirectTo === "/dashboard"
+                      ? "/register"
+                      : `/register?redirect=${encodeURIComponent(redirectTo)}`
+                  }
+                >
+                  Registre-se
+                </Link>
               </FieldDescription>
             </FieldGroup>
           </form>

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -H 127.0.0.1 -p 3001",
+    "dev": "next dev",
     "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "biome check",
@@ -49,6 +49,7 @@
     "react-hook-form": "^7.71.1",
     "react-resizable-panels": "^4.4.1",
     "recharts": "2.15.4",
+    "resend": "^6.12.4",
     "server-only": "^0.0.1",
     "shadcn": "^3.7.0",
     "sonner": "^2.0.7",
