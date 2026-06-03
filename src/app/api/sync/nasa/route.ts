@@ -30,8 +30,8 @@ import type {
  */
 
 export async function POST(request: Request) {
-  const ok = await verifyEcosystemSyncRequest(request);
-  if (!ok) {
+  const isSignatureValid = await verifyEcosystemSyncRequest(request);
+  if (!isSignatureValid) {
     return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
   }
 
@@ -55,8 +55,8 @@ export async function POST(request: Request) {
       default:
         return NextResponse.json({ error: "unknown_type" }, { status: 400 });
     }
-  } catch (e) {
-    console.error("[sync inbound nasa] upsert failed:", e);
+  } catch (error) {
+    console.error("[sync inbound nasa] upsert failed:", error);
     return NextResponse.json(
       { error: "internal", retryable: true },
       { status: 500 },
@@ -64,121 +64,121 @@ export async function POST(request: Request) {
   }
 }
 
-function d(iso: string | null): Date | null {
-  return iso ? new Date(iso) : null;
+function toDateOrNull(isoString: string | null): Date | null {
+  return isoString ? new Date(isoString) : null;
 }
 
-async function upsertUser(p: SyncUserPayload) {
+async function upsertUser(userPayload: SyncUserPayload) {
   // Colisão de e-mail (unique) com id diferente → loga e pula.
-  const existingByEmail = await prisma.user.findUnique({
-    where: { email: p.email },
+  const userWithSameEmail = await prisma.user.findUnique({
+    where: { email: userPayload.email },
     select: { id: true },
   });
-  if (existingByEmail && existingByEmail.id !== p.id) {
+  if (userWithSameEmail && userWithSameEmail.id !== userPayload.id) {
     console.warn(
-      `[sync inbound nasa] user email collision: ${p.email} (incoming ${p.id} != local ${existingByEmail.id}) — skipping`,
+      `[sync inbound nasa] user email collision: ${userPayload.email} (incoming ${userPayload.id} != local ${userWithSameEmail.id}) — skipping`,
     );
     return NextResponse.json({ ok: true, skipped: "email_collision" });
   }
 
   // comments-app User NÃO tem `phone` — campo extra ignorado por design.
-  const data = {
-    name: p.name,
-    email: p.email,
-    emailVerified: p.emailVerified,
-    image: p.image,
-    createdAt: new Date(p.createdAt),
-    updatedAt: new Date(p.updatedAt),
+  const userData = {
+    name: userPayload.name,
+    email: userPayload.email,
+    emailVerified: userPayload.emailVerified,
+    image: userPayload.image,
+    createdAt: new Date(userPayload.createdAt),
+    updatedAt: new Date(userPayload.updatedAt),
   };
   await prisma.user.upsert({
-    where: { id: p.id },
-    create: { id: p.id, ...data },
-    update: data,
+    where: { id: userPayload.id },
+    create: { id: userPayload.id, ...userData },
+    update: userData,
   });
   return NextResponse.json({ ok: true });
 }
 
-async function upsertAccount(p: SyncAccountPayload) {
+async function upsertAccount(accountPayload: SyncAccountPayload) {
   // Pré-requisito: o User precisa existir (FK). Se não, retryable.
-  const user = await prisma.user.findUnique({
-    where: { id: p.userId },
+  const ownerUser = await prisma.user.findUnique({
+    where: { id: accountPayload.userId },
     select: { id: true },
   });
-  if (!user) {
+  if (!ownerUser) {
     return NextResponse.json(
       { error: "user_not_found", retryable: true },
       { status: 409 },
     );
   }
 
-  const data = {
-    accountId: p.accountId,
-    providerId: p.providerId,
-    userId: p.userId,
-    accessToken: p.accessToken,
-    refreshToken: p.refreshToken,
-    idToken: p.idToken,
-    accessTokenExpiresAt: d(p.accessTokenExpiresAt),
-    refreshTokenExpiresAt: d(p.refreshTokenExpiresAt),
-    scope: p.scope,
-    password: p.password,
-    createdAt: new Date(p.createdAt),
-    updatedAt: new Date(p.updatedAt),
+  const accountData = {
+    accountId: accountPayload.accountId,
+    providerId: accountPayload.providerId,
+    userId: accountPayload.userId,
+    accessToken: accountPayload.accessToken,
+    refreshToken: accountPayload.refreshToken,
+    idToken: accountPayload.idToken,
+    accessTokenExpiresAt: toDateOrNull(accountPayload.accessTokenExpiresAt),
+    refreshTokenExpiresAt: toDateOrNull(accountPayload.refreshTokenExpiresAt),
+    scope: accountPayload.scope,
+    password: accountPayload.password,
+    createdAt: new Date(accountPayload.createdAt),
+    updatedAt: new Date(accountPayload.updatedAt),
   };
   await prisma.account.upsert({
-    where: { id: p.id },
-    create: { id: p.id, ...data },
-    update: data,
+    where: { id: accountPayload.id },
+    create: { id: accountPayload.id, ...accountData },
+    update: accountData,
   });
   return NextResponse.json({ ok: true });
 }
 
-async function upsertOrg(p: SyncOrgPayload) {
+async function upsertOrg(orgPayload: SyncOrgPayload) {
   // `slug` é unique (nullable) no comments. Se outra org já usa esse slug,
   // grava SEM slug (null) — não pula a org inteira (pular faria o Member
   // 409ar pra sempre por FK ausente).
-  let slug = p.slug;
-  if (slug) {
-    const bySlug = await prisma.organization.findUnique({
-      where: { slug },
+  let resolvedSlug = orgPayload.slug;
+  if (resolvedSlug) {
+    const orgWithSameSlug = await prisma.organization.findUnique({
+      where: { slug: resolvedSlug },
       select: { id: true },
     });
-    if (bySlug && bySlug.id !== p.id) {
+    if (orgWithSameSlug && orgWithSameSlug.id !== orgPayload.id) {
       console.warn(
-        `[sync inbound nasa] org slug collision: ${slug} (incoming ${p.id} != local ${bySlug.id}) — gravando sem slug`,
+        `[sync inbound nasa] org slug collision: ${resolvedSlug} (incoming ${orgPayload.id} != local ${orgWithSameSlug.id}) — gravando sem slug`,
       );
-      slug = null;
+      resolvedSlug = null;
     }
   }
 
-  const data = {
-    name: p.name,
-    slug,
-    logo: p.logo,
-    metadata: p.metadata,
-    createdAt: new Date(p.createdAt),
+  const orgData = {
+    name: orgPayload.name,
+    slug: resolvedSlug,
+    logo: orgPayload.logo,
+    metadata: orgPayload.metadata,
+    createdAt: new Date(orgPayload.createdAt),
   };
   await prisma.organization.upsert({
-    where: { id: p.id },
-    create: { id: p.id, ...data },
-    update: data,
+    where: { id: orgPayload.id },
+    create: { id: orgPayload.id, ...orgData },
+    update: orgData,
   });
   return NextResponse.json({ ok: true });
 }
 
-async function upsertMember(p: SyncMemberPayload) {
+async function upsertMember(memberPayload: SyncMemberPayload) {
   // Pré-requisitos: org + user existem (FK). Se não, retryable.
-  const [org, user] = await Promise.all([
+  const [parentOrg, memberUser] = await Promise.all([
     prisma.organization.findUnique({
-      where: { id: p.organizationId },
+      where: { id: memberPayload.organizationId },
       select: { id: true },
     }),
     prisma.user.findUnique({
-      where: { id: p.userId },
+      where: { id: memberPayload.userId },
       select: { id: true },
     }),
   ]);
-  if (!org || !user) {
+  if (!parentOrg || !memberUser) {
     return NextResponse.json(
       { error: "prerequisite_missing", retryable: true },
       { status: 409 },
@@ -186,32 +186,32 @@ async function upsertMember(p: SyncMemberPayload) {
   }
 
   // Colisão do par único [organizationId, userId] com id diferente → pula.
-  const existingPair = await prisma.member.findUnique({
+  const existingMembership = await prisma.member.findUnique({
     where: {
       organizationId_userId: {
-        organizationId: p.organizationId,
-        userId: p.userId,
+        organizationId: memberPayload.organizationId,
+        userId: memberPayload.userId,
       },
     },
     select: { id: true },
   });
-  if (existingPair && existingPair.id !== p.id) {
+  if (existingMembership && existingMembership.id !== memberPayload.id) {
     console.warn(
-      `[sync inbound nasa] member pair collision (incoming ${p.id} != local ${existingPair.id}) — skipping`,
+      `[sync inbound nasa] member pair collision (incoming ${memberPayload.id} != local ${existingMembership.id}) — skipping`,
     );
     return NextResponse.json({ ok: true, skipped: "member_collision" });
   }
 
-  const data = {
-    organizationId: p.organizationId,
-    userId: p.userId,
-    role: p.role,
-    createdAt: new Date(p.createdAt),
+  const memberData = {
+    organizationId: memberPayload.organizationId,
+    userId: memberPayload.userId,
+    role: memberPayload.role,
+    createdAt: new Date(memberPayload.createdAt),
   };
   await prisma.member.upsert({
-    where: { id: p.id },
-    create: { id: p.id, ...data },
-    update: data,
+    where: { id: memberPayload.id },
+    create: { id: memberPayload.id, ...memberData },
+    update: memberData,
   });
   return NextResponse.json({ ok: true });
 }

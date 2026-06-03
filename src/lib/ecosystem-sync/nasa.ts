@@ -21,11 +21,12 @@ const INBOUND_PATH = "/api/sync/comments";
 const TIMEOUT_MS = Number(process.env.SYNC_REQUEST_TIMEOUT_MS ?? 10_000);
 
 function baseUrl(): string {
-  const b = process.env.NASA_SYNC_BASE_URL ?? process.env.NASA_BASE_URL;
-  if (!b) {
+  const configuredBaseUrl =
+    process.env.NASA_SYNC_BASE_URL ?? process.env.NASA_BASE_URL;
+  if (!configuredBaseUrl) {
     throw new Error("Missing env NASA_SYNC_BASE_URL (ou NASA_BASE_URL)");
   }
-  return b.replace(/\/$/, "");
+  return configuredBaseUrl.replace(/\/$/, "");
 }
 
 async function send(type: SyncType, data: unknown): Promise<void> {
@@ -36,17 +37,19 @@ async function send(type: SyncType, data: unknown): Promise<void> {
     body,
   });
 
-  const res = await fetch(`${baseUrl()}${INBOUND_PATH}`, {
+  const response = await fetch(`${baseUrl()}${INBOUND_PATH}`, {
     method: "POST",
     headers,
     body,
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
+  if (!response.ok) {
+    const errorBody = await response.text().catch(() => "");
     // Lança para a função Inngest fazer retry/backoff.
-    throw new Error(`sync→nasa ${type} failed: HTTP ${res.status} ${text}`);
+    throw new Error(
+      `sync→nasa ${type} failed: HTTP ${response.status} ${errorBody}`,
+    );
   }
 }
 

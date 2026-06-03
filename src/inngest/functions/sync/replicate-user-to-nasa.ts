@@ -1,6 +1,6 @@
+import { inngest } from "@/inngest/client";
 import prisma from "@/lib/db";
 import { ecosystemSyncNasa } from "@/lib/ecosystem-sync/nasa";
-import { inngest } from "@/inngest/client";
 
 /**
  * Replica um `User` do comments-app no NASA (best-effort, retry/backoff).
@@ -15,7 +15,7 @@ export const replicateUserToNasa = inngest.createFunction(
     triggers: { event: "sync/user.upsert" },
   },
   async ({ event, step }) => {
-    const userId = (event.data as { userId: string }).userId;
+    const { userId } = event.data as { userId: string };
 
     const payload = await step.run("load-user", async () => {
       const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -33,7 +33,9 @@ export const replicateUserToNasa = inngest.createFunction(
     });
     if (!payload) return { skipped: "user_not_found", userId };
 
-    await step.run("upsert-to-nasa", () => ecosystemSyncNasa.upsertUser(payload));
+    await step.run("upsert-to-nasa", () =>
+      ecosystemSyncNasa.upsertUser(payload),
+    );
     return { ok: true, userId };
   },
 );

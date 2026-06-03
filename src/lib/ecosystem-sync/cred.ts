@@ -25,21 +25,21 @@ export const SYNC_TIMESTAMP_HEADER = "x-sync-timestamp";
 export const SYNC_SIGNATURE_HEADER = "x-sync-signature";
 
 function getSharedSecret(): string {
-  const s = process.env.SYNC_SHARED_SECRET;
-  if (!s) {
+  const sharedSecret = process.env.SYNC_SHARED_SECRET;
+  if (!sharedSecret) {
     throw new Error(
       "Missing env SYNC_SHARED_SECRET. Generate with 'openssl rand -hex 32'.",
     );
   }
-  return s;
+  return sharedSecret;
 }
 
 function getApiKey(): string {
-  const k = process.env.SYNC_API_KEY;
-  if (!k) {
+  const apiKey = process.env.SYNC_API_KEY;
+  if (!apiKey) {
     throw new Error("Missing env SYNC_API_KEY.");
   }
-  return k;
+  return apiKey;
 }
 
 function sign(
@@ -48,8 +48,10 @@ function sign(
   body: string,
   timestamp: string,
 ): string {
-  const canonical = `${method.toUpperCase()}\n${path}\n${body}\n${timestamp}`;
-  return createHmac("sha256", getSharedSecret()).update(canonical).digest("hex");
+  const canonicalString = `${method.toUpperCase()}\n${path}\n${body}\n${timestamp}`;
+  return createHmac("sha256", getSharedSecret())
+    .update(canonicalString)
+    .digest("hex");
 }
 
 /**
@@ -72,11 +74,16 @@ export function buildSyncHeaders(args: {
   };
 }
 
-function hexEqual(a: string, b: string): boolean {
-  const ab = Buffer.from(a, "hex");
-  const bb = Buffer.from(b, "hex");
-  if (ab.length === 0 || ab.length !== bb.length) return false;
-  return timingSafeEqual(ab, bb);
+function hexEqual(expectedHex: string, actualHex: string): boolean {
+  const expectedBuffer = Buffer.from(expectedHex, "hex");
+  const actualBuffer = Buffer.from(actualHex, "hex");
+  if (
+    expectedBuffer.length === 0 ||
+    expectedBuffer.length !== actualBuffer.length
+  ) {
+    return false;
+  }
+  return timingSafeEqual(expectedBuffer, actualBuffer);
 }
 
 /**
@@ -95,15 +102,23 @@ export async function verifyEcosystemSyncRequest(
 
     if (apiKey !== getApiKey()) return false;
 
-    const ts = Number(timestamp);
-    if (!Number.isFinite(ts) || Math.abs(Date.now() - ts) > DRIFT_MS) {
+    const timestampMs = Number(timestamp);
+    if (
+      !Number.isFinite(timestampMs) ||
+      Math.abs(Date.now() - timestampMs) > DRIFT_MS
+    ) {
       return false;
     }
 
     const rawBody = await request.clone().text();
     const url = new URL(request.url);
-    const expected = sign(request.method, url.pathname, rawBody, timestamp);
-    return hexEqual(expected, signature);
+    const expectedSignature = sign(
+      request.method,
+      url.pathname,
+      rawBody,
+      timestamp,
+    );
+    return hexEqual(expectedSignature, signature);
   } catch {
     return false;
   }

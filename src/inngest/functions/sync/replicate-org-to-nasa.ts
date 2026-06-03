@@ -1,6 +1,6 @@
+import { inngest } from "@/inngest/client";
 import prisma from "@/lib/db";
 import { ecosystemSyncNasa } from "@/lib/ecosystem-sync/nasa";
-import { inngest } from "@/inngest/client";
 
 /**
  * Replica uma `Organization` do comments-app no NASA (best-effort, retry/backoff).
@@ -14,8 +14,7 @@ export const replicateOrgToNasa = inngest.createFunction(
     triggers: { event: "sync/org.upsert" },
   },
   async ({ event, step }) => {
-    const organizationId = (event.data as { organizationId: string })
-      .organizationId;
+    const { organizationId } = event.data as { organizationId: string };
 
     const payload = await step.run("load-org", async () => {
       const org = await prisma.organization.findUnique({
@@ -33,7 +32,9 @@ export const replicateOrgToNasa = inngest.createFunction(
     });
     if (!payload) return { skipped: "org_not_found", organizationId };
 
-    await step.run("upsert-to-nasa", () => ecosystemSyncNasa.upsertOrg(payload));
+    await step.run("upsert-to-nasa", () =>
+      ecosystemSyncNasa.upsertOrg(payload),
+    );
     return { ok: true, organizationId };
   },
 );

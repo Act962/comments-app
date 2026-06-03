@@ -1,6 +1,6 @@
+import { inngest } from "@/inngest/client";
 import prisma from "@/lib/db";
 import { ecosystemSyncNasa } from "@/lib/ecosystem-sync/nasa";
-import { inngest } from "@/inngest/client";
 
 /**
  * Replica um `Account` do comments-app no NASA (best-effort, retry/backoff).
@@ -15,7 +15,7 @@ export const replicateAccountToNasa = inngest.createFunction(
     triggers: { event: "sync/account.upsert" },
   },
   async ({ event, step }) => {
-    const accountId = (event.data as { accountId: string }).accountId;
+    const { accountId } = event.data as { accountId: string };
 
     const payload = await step.run("load-account", async () => {
       const account = await prisma.account.findUnique({
