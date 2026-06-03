@@ -118,6 +118,19 @@ Handlers resolve the tenant by looking up `Integration.instagramId → organizat
 
 `src/inngest/client.ts` defines the Inngest client; functions live in `src/inngest/functions.ts` and are served from `src/app/api/inngest/route.ts`. Events are dispatched via `inngest.send({ name, data })` (see `src/app/(public)/test-inngest/actions.ts` for a reference trigger). Run `pnpm inngest:dev` alongside `pnpm dev` to execute functions locally — without it, sent events accumulate but never run.
 
+### Ecosystem sync (NASA)
+
+The app replicates its auth entities (`User`, `Account`, `Organization`, `Member`) to a sibling app (**NASA**) so credentials are shared across the ecosystem (NASA ↔ NERP ↔ comments). This is **distinct** from the per-org S2S consent flow (`x-comments-*` headers over `CommentsIntegrationKey`) — sync is the master app↔app channel keyed on `SYNC_SHARED_SECRET` + `SYNC_API_KEY`, identical across all apps.
+
+- **Signing — `src/lib/ecosystem-sync/cred.ts`**: the canonical string is `` `${METHOD}\n${pathname}\n${body}\n${timestamp}` `` (pathname **without query**), signed `HMAC-SHA256` → hex over `SYNC_SHARED_SECRET`, carried in `x-sync-api-key` / `x-sync-timestamp` / `x-sync-signature`. **This must match byte-for-byte across every app in the ecosystem — never change the canonical format or header names.** `buildSyncHeaders` signs OUTBOUND; `verifyEcosystemSyncRequest` verifies INBOUND (timing-safe, ±5min drift window, never throws → 401 on any failure).
+- **Outbound client — `src/lib/ecosystem-sync/nasa.ts`**: `ecosystemSyncNasa.upsert{User,Account,Org,Member}` POST to NASA's `/api/sync/comments` (base from `NASA_SYNC_BASE_URL` ?? `NASA_BASE_URL`). Non-2xx throws so the Inngest step retries.
+- **Payloads — `src/lib/ecosystem-sync/payloads.ts`**: canonical shapes mirrored from NASA. The cuid `id` is always propagated — it's the upsert idempotency key. Dates travel as ISO strings; each side reads only the fields its schema has (comments has no `phone`; sent as `null`).
+- **Outbound jobs — `src/inngest/functions/sync/`**: one function per entity (`replicate-*-to-nasa.ts`), 5 retries each. `replicate-member-to-nasa.ts` is **self-sufficient** — it upserts the whole graph in FK order (user → accounts → org → member), so any route that creates a member only needs to emit `memberId`.
+- **Inbound endpoint — `src/app/api/sync/nasa/route.ts`** (NASA → comments): verifies the signature, then **uses raw Prisma only — NEVER `auth.api.*`** (that would fire `databaseHooks.user.create.after` and spawn a phantom Empresa + duplicate Member/Subscription). All upserts are by `id` (idempotent). Missing-FK prerequisites return `409 { retryable: true }` so NASA re-enqueues until they converge; unique collisions (email, org slug, member pair) are logged and skipped — except org slug, which writes `null` rather than skipping the whole org (skipping would 409 its members forever).
+- **Emit points — `src/lib/auth.ts`**: hooks `databaseHooks.user.create.after` (emits user + default org + member), `databaseHooks.account.create.after`, and `organizationHooks.{afterCreateOrganization, afterAddMember, afterAcceptInvitation}`. All wrapped in `try/catch` that only logs — sync is **best-effort and must never break sign-up/org creation**. Note `afterAcceptInvitation` is required separately: better-auth does **not** fire `afterAddMember` when a member joins via invitation.
+
+Required env: `SYNC_SHARED_SECRET`, `SYNC_API_KEY`, `NASA_SYNC_BASE_URL` (or `NASA_BASE_URL`); optional `SYNC_REQUEST_TIMEOUT_MS` (default 10s). New sync functions must be registered in `src/app/api/inngest/route.ts`.
+
 ### Database
 
 `prisma/schema.prisma`. Key relations:

@@ -3,8 +3,10 @@ packages:
 allowBuilds:
   '@prisma/engines': true
   esbuild: true
+  inngest-cli: set this to true or false
   msw: true
   prisma: true
+  protobufjs: set this to true or false
   sharp: true
 ignoredBuiltDependencies:
   - sharp

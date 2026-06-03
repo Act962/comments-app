@@ -6,6 +6,7 @@ import prisma from "./db";
 import { stripeClient } from "./stripe";
 import { PLAN_ENUM, PLANS } from "./constant";
 import { createDefaultSubscription } from "@/actions/subscription";
+import { inngest } from "@/inngest/client";
 import {
   invitationEmail,
   resetPasswordEmail,
@@ -72,7 +73,7 @@ export const auth = betterAuth({
               createdAt: new Date(),
             },
           });
-          await prisma.member.create({
+          const member = await prisma.member.create({
             data: {
               organizationId: org.id,
               userId: user.id,
@@ -81,6 +82,41 @@ export const auth = betterAuth({
             },
           });
           await createDefaultSubscription(org.id);
+
+          // ── Sync de auth comments → NASA (best-effort) ──
+          // user + org/member default são criados aqui via Prisma cru (fora dos
+          // organizationHooks), então precisam ser emitidos explicitamente.
+          // try/catch que só loga: NUNCA quebra o sign-up.
+          try {
+            await inngest.send({
+              name: "sync/user.upsert",
+              data: { userId: user.id },
+            });
+            await inngest.send({
+              name: "sync/org.upsert",
+              data: { organizationId: org.id },
+            });
+            await inngest.send({
+              name: "sync/member.upsert",
+              data: { memberId: member.id },
+            });
+          } catch (e) {
+            console.error("[sync emit] user.create enqueue failed:", e);
+          }
+        },
+      },
+    },
+    account: {
+      create: {
+        after: async (account) => {
+          try {
+            await inngest.send({
+              name: "sync/account.upsert",
+              data: { accountId: account.id },
+            });
+          } catch (e) {
+            console.error("[sync emit] account.create enqueue failed:", e);
+          }
         },
       },
     },
@@ -141,8 +177,47 @@ export const auth = betterAuth({
         });
       },
       organizationHooks: {
-        afterCreateOrganization: async ({ organization }) => {
+        // ── Sync de auth comments → NASA (best-effort) ──
+        // Só enfileira; replicação real com retry roda no Inngest.
+        afterCreateOrganization: async ({ organization, member }) => {
           await createDefaultSubscription(organization.id);
+          try {
+            await inngest.send({
+              name: "sync/org.upsert",
+              data: { organizationId: organization.id },
+            });
+            if (member?.id) {
+              await inngest.send({
+                name: "sync/member.upsert",
+                data: { memberId: member.id },
+              });
+            }
+          } catch (e) {
+            console.error("[sync emit] org.create enqueue failed:", e);
+          }
+        },
+        afterAddMember: async ({ member }) => {
+          try {
+            await inngest.send({
+              name: "sync/member.upsert",
+              data: { memberId: member.id },
+            });
+          } catch (e) {
+            console.error("[sync emit] member.add enqueue failed:", e);
+          }
+        },
+        // better-auth NÃO dispara afterAddMember ao ACEITAR convite — só
+        // afterAcceptInvitation. Sem este hook, membros que entram por convite
+        // nunca replicariam pro NASA.
+        afterAcceptInvitation: async ({ member }) => {
+          try {
+            await inngest.send({
+              name: "sync/member.upsert",
+              data: { memberId: member.id },
+            });
+          } catch (e) {
+            console.error("[sync emit] member.accept enqueue failed:", e);
+          }
         },
       },
     }),
